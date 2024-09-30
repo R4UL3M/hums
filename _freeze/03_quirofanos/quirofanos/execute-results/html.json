@@ -1,0 +1,14 @@
+{
+  "hash": "8199471c8f7e0bc474177b98a19cf6e2",
+  "result": {
+    "markdown": "---\ntitle: \"Quirófanos\"\n---\n\nQuirófanos\n\n\n::: {.cell}\n\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

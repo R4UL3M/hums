@@ -1,0 +1,25 @@
+---
+title: "Gestión de Área Quirúrgica"
+subtitle: "Hospital Universitario Miguel Servet"
+---
+
+## Objetivos
+
+### Del Grupo de Trabajo
+
+- Optimizar la Lista de Espera Quirúrgica (LEQ) del HUMS. 
+
+- Obtener un mejor control y gestión más eficiente del Área Quirúrgica del HUMS.
+
+### De este Sitio Web
+
+- Recopilar, organizar, visualizar y comprender de forma rápida y eficaz toda la información relacionada con el 
+flujo administrativo de la actividad quirúrgica del HUMS.
+
+- Automatizar la generación de informes que aporten valor en línea con los objetivos del Grupo de Trabajo. 
+
+- Generar herramientas interactivas que ayuden a predecir la evolución natural de los indicadores de calidad que se establezcan y el impacto que sobre ellos podrían tener las potenciales medidas que se fueran tomando.  
+
+
+
+

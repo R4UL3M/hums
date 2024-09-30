@@ -1,0 +1,85 @@
+---
+title: "Consultas Externas"
+subtitle: "Lectura y Unión de Registros"
+---
+
+
+
+```{r}
+
+library(tidyverse)
+library(purrr)
+library(readxl)
+
+```
+
+
+
+
+```{r}
+
+
+read_consultas <- function(path = NULL, codigo = NULL){
+  
+  df <- read_excel(path, skip=7) %>% 
+    mutate(codigo = codigo) %>%
+    mutate(Fecha = as.POSIXct(Fecha, format = "%d/%m/%y %H:%M"),
+           Mes = month(Fecha),
+           Anio = year(Fecha),
+           Hora = hour(Fecha),
+           `Fecha nac.` = as.POSIXct(`Fecha nac.`, format = "%d/%m/%Y"), 
+           Edad = as.numeric(round(difftime(Fecha, `Fecha nac.`, units = "days")/365, 0))
+           ) %>%
+    select(codigo, Fecha, Mes, Anio, Hora, everything()) %>%
+    select(-c(CIA, NHC, Paciente, `Cód.age.`, Agenda, `Cód.Serv.`))
+  
+  assign(x = paste0(codigo, "_ccee"), df, envir = .GlobalEnv)
+}
+
+
+map_consultas <- tibble(
+path =  paste0("data/",c(
+  "cto",              # 1
+  "tra_cadera",       # 2
+  "tra_rodilla",      # 3 
+  "tra_columna",      # 4
+  "tra_fracturas",    # 5
+  "der_hums"          # 6 
+  ),     # 4
+  ".xls"),
+
+codigo = c(
+  "CTO",              # 1
+  "TRA_CADERA",       # 2
+  "TRA_RODILLA",      # 3
+  "TRA_COLUMNA",      # 4
+  "TRA_FRACTURAS",    # 5 
+  "DER_HUMS"          # 6
+  )      
+)
+
+pwalk(map_consultas, read_consultas)
+
+
+```
+
+
+
+```{r}
+
+objetos <- ls()
+
+objetos <- objetos[grepl("_ccee$", objetos)]
+
+
+# Crear una lista de los objetos seleccionados
+lista_objetos <- lapply(objetos, get)
+
+# Combinar los objetos en un solo data frame
+ALL_consultas <- do.call(rbind, lista_objetos)
+
+write_excel_csv(x = ALL_consultas, file = "ALL_consultas.csv")
+
+
+```
+

@@ -1,0 +1,134 @@
+project:
+  type: website
+  output-dir: _site
+
+toc: true
+number-sections: true
+
+execute: 
+  freeze: auto
+
+website:
+  title: HUMS
+  page-footer: "Developed by Raúl Embún" 
+  page-navigation: true
+  
+  navbar:
+    background: primary
+    logo: /imagenes/logo_hums.jpg
+    search: true
+    left:
+      - text: "Inicio"
+        href: index.qmd
+        
+      - text: "Nosotros"
+        href: nosotros/nosotros.qmd
+        
+      - text: "Consultas Ext."
+        href: 01_consultas/00_setup.qmd
+        
+      - text: "RDQ"
+        href: 02_rdq/00_rdq.qmd
+        
+      - text: "Quirófanos"
+        href: 03_quirofanos/quirofanos.qmd
+      
+      - text: "Patologías"
+        
+      - text: "Cuadro de Mandos"
+        href: 05_cuadro/cuadro.qmd
+      
+      # - text: "Patologías"
+      #   # href: 04_patologias/patologias.qmd
+      # - text: "Cuadro de Mandos"
+      #   href: 05_cuadro/cuadro.qmd    
+      # - text: "Aplicaciones"
+      #   href: apps/apps.qmd
+
+      
+
+
+  sidebar:
+      - title: "Inicio"
+        href: index.qmd
+        
+      - title: "Nosotros"
+        href: nosotros.qmd
+        
+      - title: "Consultas Ext."
+        style: "docked"
+        background: light
+        contents:
+          - 01_consultas/00_setup.qmd
+          - text: "Cirugía Torácica"
+            href: 01_consultas/cto_ccee.qmd
+          - section: "Dermatología"
+            contents: 
+              - text: "HUMS"
+                href: 01_consultas/der_hums.qmd
+              - text: "CME Ramón y Cajal"
+              - text: "CME San José"
+          - section: "Traumatología" 
+            contents:
+              - text: "Global"
+                href: 01_consultas/tra_ccee.qmd
+              - text: "Unidad de Cadera"
+                href: 01_consultas/tra_cadera_ccee.qmd
+              - text: "Unidad de Columna"
+                href: 01_consultas/tra_columna_ccee.qmd
+              - text: "Unidad de Fracturas"
+                href: 01_consultas/tra_fracturas_ccee.qmd
+              - text: "Unidad de Rodilla"
+                href: 01_consultas/tra_rodilla_ccee.qmd
+    
+      - title: "RDQ"
+        style: "docked"
+        background: light
+        contents:
+          - text: "Reg. Demanda Quirúrgica"
+            href: 02_rdq/00_rdq.qmd
+          - text: "Comparación Servicios"
+            href: 02_rdq/01_comparacion_servicios_rdq.qmd
+          - text: "Cirugía Torácica"
+            href: 02_rdq/cto_rdq.qmd
+          - text: "Traumatología"
+            href: 02_rdq/tra_rdq.qmd
+
+      - text: "Quirófanos"
+        style: "docked"
+        background: light
+        contents:
+          - text: "Quirófanos"
+            href: 03_quirofanos/quirofanos.qmd
+          - text: "Cirugía Torácica"
+  
+           
+
+           
+      #     - text: Servicios Quirúrgicos
+      #     - text: Instalaciones 
+      #     - text: Tipos de Jornada
+      #     - text: Patologías
+
+      
+
+
+  
+format: 
+  html:
+    theme: 
+      - minty
+      - styles.scss
+    max-width: "1500px"
+    margin-left: "#effae4"
+    embed-resources: true
+    echo: false
+    warning: false
+    code-tools: true
+    code-link: true
+    code-copy: true
+    toc-title: "Tabla de Contenidos"
+    toc: true
+    date: last-modified
+
+

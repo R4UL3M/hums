@@ -1,0 +1,499 @@
+[
+  {
+    "objectID": "sesiones/sesiones.html",
+    "href": "sesiones/sesiones.html",
+    "title": "Sesiones Quirúrgicas",
+    "section": "",
+    "text": "Sesiones Quirúrgicas"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html",
+    "title": "Cirugía Torácica",
+    "section": "",
+    "text": "Codelibrary(tidyverse)\nlibrary(readxl)\nlibrary(janitor)\nlibrary(openxlsx)\nlibrary(DT)\nlibrary(gt)"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#importación-y-depuración-de-datos",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#importación-y-depuración-de-datos",
+    "title": "Cirugía Torácica",
+    "section": "\n1 Importación y Depuración de Datos",
+    "text": "1 Importación y Depuración de Datos\n\nCodecto &lt;- readxl::read_excel(\"cirugia_toracica.xls\", skip = 5) %&gt;% janitor::clean_names() %&gt;%\n  select(-c(\"nhc\", \"cia\"))\n\ncto %&gt;% head(5) %&gt;% DT::datatable(options = list(\n  initComplete = JS(\n    \"function(settings, json) {\",\n    \"$('table').css({'font-size': '12px'});\",\n    \"}\"\n  )\n))\n\n\n\n\n\n\n\n\nfecha: modificación del tipo de dato para manejarlo como una fecha.\n\nh_ini (hora de inicio de la cirugía concatenación fecha y h_ini\n\n\nh_fin (hora de fianlización de la cirugía): concatenación fecha y h_fin\n\n\nh_15: creramos esta variable que representa las 15:00 horas del día que indica la variable fecha\n\n\ntiempo_quirurgico (minutos): variable de nueva creación resultado de h_fin - h_ini\n\n\nfin_posterior_15(TRUE vs FALSE): variable de nueva creación. TRUE si la cirugía termina después de las 15:00 horas.\n\n\nCodecto$fecha &lt;- as.Date(cto$fecha, format = \"%d/%m/%Y\") \n\ncto$h_ini &lt;- as.POSIXct(paste(cto$fecha, cto$h_ini), format = \"%Y-%m-%d %H:%M\", tz = \"UTC\")\n\ncto$h_fin &lt;- as.POSIXct(paste(cto$fecha, cto$h_fin), format = \"%Y-%m-%d %H:%M\", tz = \"UTC\") \n\ncto$h_15 &lt;- as.POSIXct(paste(cto$fecha, \"15:00\"), format = \"%Y-%m-%d %H:%M\", tz = \"UTC\")\n\ncto &lt;- cto %&gt;% mutate(tiempo_quirurgico = difftime(h_fin, h_ini, units = \"mins\"),\n                      fin_posterior_15 = format(cto$h_fin, \"%H:%M:%S\") &gt; \"15:00:00\")\n\n\n\ncto %&gt;% \n  select(fecha, h_ini, h_fin, h_15, tiempo_quirurgico, fin_posterior_15) %&gt;% \n  arrange(fecha) %&gt;%\n  head(5) %&gt;%\n  DT::datatable(options = list(\n  initComplete = JS(\n    \"function(settings, json) {\",\n    \"$('table').css({'font-size': '14px'});\",\n    \"}\"\n  )\n)) \n\n\n\n\n\n\n\nConversion de la variable anul a variable tipo lógico (TRUE vs FALSE)\n\n\nCodecto &lt;- cto %&gt;% mutate(anul = if_else(is.na(anul), FALSE, TRUE))\n\n\n\nCreación de la variable lobectomia como procedimiento mayor más representativo que se utilizará para el cálculo del tiempo quirúrgico estandard en procedimientos mayores. En la creación de dicha variable se ha utilizado la siguiente expresión regular:\n\n\nCodecto$lobectomia &lt;- grepl(\"LOBECTOMIA|LSD|LM|LID|LII|LSI\", cto$procedimientos, ignore.case = TRUE) & \n                 !grepl(\"ATIPICA|CUÑA|RA\", cto$procedimientos, ignore.case = TRUE)\n\ncto %&gt;% select(procedimientos, lobectomia) %&gt;% \n  DT::datatable(options = list(\n  initComplete = JS(\n    \"function(settings, json) {\",\n    \"$('table').css({'font-size': '14px'});\",\n    \"}\"\n  )\n))\n\n\n\n\n\n\n\nCreación de la variable cirujano representando el cirujano principal del procedimiento.\n\n\nCodecto$cirujano_pral &lt;- sub(\"\\\\s*\\\\(Pral\\\\).*\", \"\", cto$cirujanos)\n\ncto %&gt;% select(cirujanos, cirujano_pral) %&gt;% head(5) %&gt;% DT::datatable()"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#procedimientos-mensuales",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#procedimientos-mensuales",
+    "title": "Cirugía Torácica",
+    "section": "\n2 Procedimientos Mensuales",
+    "text": "2 Procedimientos Mensuales\n\nCodecto %&gt;% filter(anul == FALSE) %&gt;% count(Mes = month(fecha)) %&gt;% \n  ggplot(aes(x= factor(Mes), y = n)) +\n  geom_col(fill=\"steelblue\", width = 0.7)+\n  geom_label(aes(label=n))+\n  theme_replace() +\n  labs(x = \"\\nMes\", y=\"Procedimientos\\n\")"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#jornadas-de-mañana-jm",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#jornadas-de-mañana-jm",
+    "title": "Cirugía Torácica",
+    "section": "\n3 Jornadas de Mañana (JM)",
+    "text": "3 Jornadas de Mañana (JM)\n\n3.1 Tiempo Quirúrgico Útil JM\n\nCodecto %&gt;% filter(anul==FALSE & tipo_int != \"URGENTE\" & tiempo_quirurgico &gt;0 & prolong2 ==FALSE) %&gt;% \n  group_by(fecha) %&gt;% \n  summarise(tq = sum(tiempo_quirurgico)) %&gt;% \n  arrange(fecha) %&gt;%\n  ggplot(aes(x=fecha, y=tq)) +\n  geom_point()+\n  geom_smooth()+\n  labs(y=\"Minutos\")\n\n\n\n\n\n3.2 Tiempo de Finalización (JM)\n\nCodecto %&gt;% filter(anul==FALSE & tipo_int != \"URGENTE\" & prolong2 != TRUE) %&gt;% \n  group_by(fecha, h_15) %&gt;% summarise(h_fin_max = max(h_fin)) %&gt;%\n  mutate(dif = as.numeric(difftime(h_fin_max, h_15, units = \"mins\"))) %&gt;%\n  ggplot(aes(x=fecha, y=dif))+\n  geom_smooth()+\n  geom_hline(yintercept = 0, colour = \"red\")+\n  geom_point()+\n  labs(y=\"Minutos\\n\", x=\"\\nFecha\", caption = \"Valores positivos representan tiempo transcurrido después de las 15:00h.\")"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#cancelaciones",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#cancelaciones",
+    "title": "Cirugía Torácica",
+    "section": "\n4 Cancelaciones",
+    "text": "4 Cancelaciones\n\nCodecto %&gt;% filter(anul == TRUE) %&gt;% count(Mes = month(fecha)) %&gt;% \n  ggplot(aes(x= factor(Mes), y = n)) +\n  geom_col(fill=\"steelblue\", width = 0.7)+\n  geom_label(aes(label=n))+\n  theme_replace() +\n  labs(x = \"\\nMes\", y=\"Cancelaciones\\n\")"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#hora-cancelación",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#hora-cancelación",
+    "title": "Cirugía Torácica",
+    "section": "\n5 Hora Cancelación",
+    "text": "5 Hora Cancelación\n\nCodecto %&gt;% filter(anul == TRUE) %&gt;% \n  mutate(h_ini_hm = format(h_ini, format = \"%H:%M\")) %&gt;%\n  ggplot(aes(x=fecha, y= h_ini_hm))+\n  geom_point(color = \"steelblue\", size=2)+\n  theme_replace()+\n  labs(y = \"Cancelación Hora:Minutos\\n\", x=\"\\nFecha\")"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#jornadas-continuas-jc",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#jornadas-continuas-jc",
+    "title": "Cirugía Torácica",
+    "section": "\n6 Jornadas Continuas (JC)",
+    "text": "6 Jornadas Continuas (JC)\n\nCreación de la variable prolong2 que toma el valor TRUE para registros sombreados en amarillo y FALSE en caso contrario. El campo prolong2 = TRUE indica procedimientos que forman parte de una jornada continuada.\n\n\n6.1 Jornadas Continuas Mensuales (incluida Robótica)\n\nCodecto %&gt;% filter(prolong2 == \"TRUE\" & anul == FALSE) %&gt;% \n  distinct(fecha) %&gt;% \n  mutate(mes = month(fecha)) %&gt;%\n  count(mes) %&gt;%\n  ggplot(aes(x = factor(mes), y=n)) +\n  geom_col(fill=\"steelblue\", width = 0.5) +\n  geom_label(aes(label = n))+\n  theme_replace()+\n  labs(x = \"\\nMes\", y=\"Jornadas Continuas \\n\")\n\n\n\n\n\n6.2 Procedimientos en Jornada Continua\n\nCodecto &lt;- cto %&gt;% mutate(prolong = if_else(prolong == \"S\", TRUE, FALSE))\n\ncto %&gt;% filter(anul == FALSE) %&gt;% count(`Procedimientos JC`=  prolong2) %&gt;% mutate(`%` = round(100*n/sum(n))) %&gt;%\n  DT::datatable()\n\n\n\n\n\n\n\n6.3 Finalización de Jornadas Continuas\n\nCodecto %&gt;% filter(prolong2 == \"TRUE\" & anul == FALSE) %&gt;% \n  group_by(fecha) %&gt;% \n  summarise(max = max(h_fin)) %&gt;%\n  mutate(h_15 = as.POSIXct(paste(fecha, \"15:00\"), format = \"%Y-%m-%d %H:%M\", tz = \"UTC\"),\n         dif = as.numeric(difftime(max, h_15, units = \"mins\")))%&gt;%\n  filter(dif &gt;0) %&gt;%\n  ggplot(aes(x=fecha, y=dif)) +\n  geom_col(fill = \"steelblue\") +\n  geom_hline(yintercept = 0, color=\"red\", linewidth = 1)+\n  geom_hline(yintercept = 120, color=\"orange\", linewidth = 0.7, linetype = 2)+\n  geom_hline(yintercept = 180, color=\"green\", linewidth = 0.7, linetype = 2)+\n  theme_replace() +\n  labs(y = \"Minutos\\n\", x=\"\\nFecha\", caption = \"Rojo 15:00h\\n Naranja 17:00h\\n Verde 18:00h\")"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#cirugía-robótica",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#cirugía-robótica",
+    "title": "Cirugía Torácica",
+    "section": "\n7 Cirugía Robótica",
+    "text": "7 Cirugía Robótica\n\nCreamos la variable robota partir de los registros con sombreado naranja.\n\n\nCodecto %&gt;% group_by(Mes = month(fecha), Año = year(fecha)) %&gt;% count(robot)  %&gt;% filter(robot==TRUE) %&gt;%\n  ggplot(aes(x=factor(Mes), y=n)) +\n  geom_col(fill = \"steelblue\") + \n  geom_label(aes(label=n))+\n  theme_get() +\n  labs(x = \"\\nMes\", y = \"Proc. Robóticos\\n\", caption = \"Año 2024\")"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#cirugía-urgente",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#cirugía-urgente",
+    "title": "Cirugía Torácica",
+    "section": "\n8 Cirugía Urgente",
+    "text": "8 Cirugía Urgente\n\nCodecto %&gt;% filter(tipo_int == \"URGENTE\")  %&gt;% \n  group_by(Mes = month(fecha), Año = year(fecha)) %&gt;% summarise(n=n()) %&gt;%\n  ggplot(aes(x = as.factor(Mes), y = n )) +\n  geom_col(fill = \"steelblue\") + \n  theme_replace() +\n  labs(x = \"\\nMes\", y = \"Proced. Urgentes\\n\", caption = \"Año 2024\")"
+  },
+  {
+    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#tiempo-quirúrgico-standard-lobectomía",
+    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#tiempo-quirúrgico-standard-lobectomía",
+    "title": "Cirugía Torácica",
+    "section": "\n9 Tiempo Quirúrgico Standard (Lobectomía)",
+    "text": "9 Tiempo Quirúrgico Standard (Lobectomía)\n\nCodecto %&gt;%\n  filter(lobectomia == TRUE) %&gt;% \n  group_by(Mes = month(fecha)) %&gt;%\n  summarise(\n    mean = round(mean(tiempo_quirurgico, na.rm = TRUE),0),\n    median = round(quantile(tiempo_quirurgico,probs = 0.5, na.rm = TRUE),0),\n    p40 = quantile(tiempo_quirurgico, probs = 0.4, na.rm=TRUE),\n    p60 = quantile(tiempo_quirurgico, probs = 0.6, na.rm=TRUE)\n  ) %&gt;% DT::datatable()\n\n\n\n\n\n\n\nCodecto %&gt;%\n  filter(lobectomia == TRUE) %&gt;% \n  ggplot(aes(x=fecha, y=tiempo_quirurgico, group=month(fecha)))+\n  geom_boxplot(fill=\"steelblue\")+\n  theme_replace()+\n  labs(x=\"\\nFecha\", y=\"Tiempo Quirúrgico\\n\")"
+  },
+  {
+    "objectID": "apps/apps.html",
+    "href": "apps/apps.html",
+    "title": "Aplicaciones",
+    "section": "",
+    "text": "Aplicaciones"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html",
+    "href": "02_rdq/cto_rdq.html",
+    "title": "",
+    "section": "",
+    "text": "Code"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html#datos-primeras-visitas-y-rdq",
+    "href": "02_rdq/cto_rdq.html#datos-primeras-visitas-y-rdq",
+    "title": "",
+    "section": "\n1 Datos: Primeras Visitas y RDQ",
+    "text": "1 Datos: Primeras Visitas y RDQ"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "href": "02_rdq/cto_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "title": "",
+    "section": "\n2 Primeras Visitas vs Total Entradas en RDQ",
+    "text": "2 Primeras Visitas vs Total Entradas en RDQ"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html#total-entradas-vs-salidas",
+    "href": "02_rdq/cto_rdq.html#total-entradas-vs-salidas",
+    "title": "",
+    "section": "\n3 Total Entradas vs Salidas",
+    "text": "3 Total Entradas vs Salidas\n\n\n\n\n\n\n\n3.1 Salidas según Tipo de Jornada\n\n\n\n\n\n\n3.2 Salidas según Tipo de Cirugía"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html#activos-en-espera-todos",
+    "href": "02_rdq/cto_rdq.html#activos-en-espera-todos",
+    "title": "",
+    "section": "\n4 Activos en Espera (Todos)",
+    "text": "4 Activos en Espera (Todos)"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html#activos-en-espera-críticos",
+    "href": "02_rdq/cto_rdq.html#activos-en-espera-críticos",
+    "title": "",
+    "section": "\n5 Activos en Espera (Críticos)",
+    "text": "5 Activos en Espera (Críticos)"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html#demora-media",
+    "href": "02_rdq/cto_rdq.html#demora-media",
+    "title": "",
+    "section": "\n6 Demora Media",
+    "text": "6 Demora Media"
+  },
+  {
+    "objectID": "02_rdq/00_rdq.html",
+    "href": "02_rdq/00_rdq.html",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "",
+    "text": "RDQ"
+  },
+  {
+    "objectID": "01_consultas/tra_fracturas_ccee.html#total-consultas",
+    "href": "01_consultas/tra_fracturas_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_fracturas_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_fracturas_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_fracturas_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_fracturas_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_ccee.html#total-consultas",
+    "href": "01_consultas/tra_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/der_hums.html#total-consultas",
+    "href": "01_consultas/der_hums.html#total-consultas",
+    "title": "Dermatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/der_hums.html#primeras-visitas",
+    "href": "01_consultas/der_hums.html#primeras-visitas",
+    "title": "Dermatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/der_hums.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/der_hums.html#primeras-vs-segundas-visitas",
+    "title": "Dermatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/cto_ccee.html#total-consultas",
+    "href": "01_consultas/cto_ccee.html#total-consultas",
+    "title": "Cirugía Torácica",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/cto_ccee.html#primeras-visitas",
+    "href": "01_consultas/cto_ccee.html#primeras-visitas",
+    "title": "Cirugía Torácica",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/cto_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/cto_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Cirugía Torácica",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_cadera_ccee.html#total-consultas",
+    "href": "01_consultas/tra_cadera_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_cadera_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_cadera_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_cadera_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_cadera_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_columna_ccee.html#total-consultas",
+    "href": "01_consultas/tra_columna_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_columna_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_columna_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_columna_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_columna_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_rodilla_ccee.html#total-consultas",
+    "href": "01_consultas/tra_rodilla_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_rodilla_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_rodilla_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_rodilla_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_rodilla_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "02_rdq/01_comparacion_servicios_rdq.html",
+    "href": "02_rdq/01_comparacion_servicios_rdq.html",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "",
+    "text": "Creación del entorno de trabajo: activación de librerías, diseño de variables globales y construcción de métodos.\n\n\nCodelibrary(tidyverse)\nlibrary(readxl)\nlibrary(DT)\nlibrary(htmltools)\n\nmeses &lt;- c(\"ene\", \"feb\", \"mar\", \"abr\", \"may\", \"jun\", \"jul\", \"ago\", \"sep\", \"oct\", \"nov\", \"dic\")\nultimos_dias &lt;- c(\"31\", \"28\", \"31\", \"30\", \"31\", \"30\", \"31\", \"31\", \"30\", \"31\", \"30\", \"31\")\n\npath &lt;- \"data.xls\"\n\ncrear_fecha &lt;- function(mes, anio) {\n  mes_num &lt;- match(mes, meses)\n  ultimo_dia &lt;- ultimos_dias[mes_num]\n  fecha &lt;- paste0(ultimo_dia, \"/\", sprintf(\"%02d\", mes_num), \"/\", \"20\", anio)\n  return(dmy(fecha))\n}\n\nrdq_servicios &lt;- function(path = path, rango, servicio){\n  df &lt;- read_excel(path = path, range= rango,\n                    col_names = c(\"indicador\", \n                                  paste0(meses[9:12], \"_\", 23), \n                                  paste0(meses[1:8], \"_\", 24))) %&gt;%\n    mutate(servicio = servicio)\n  \n  df\n}"
+  },
+  {
+    "objectID": "02_rdq/01_comparacion_servicios_rdq.html#set-up",
+    "href": "02_rdq/01_comparacion_servicios_rdq.html#set-up",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "",
+    "text": "Creación del entorno de trabajo: activación de librerías, diseño de variables globales y construcción de métodos.\n\n\nCodelibrary(tidyverse)\nlibrary(readxl)\nlibrary(DT)\nlibrary(htmltools)\n\nmeses &lt;- c(\"ene\", \"feb\", \"mar\", \"abr\", \"may\", \"jun\", \"jul\", \"ago\", \"sep\", \"oct\", \"nov\", \"dic\")\nultimos_dias &lt;- c(\"31\", \"28\", \"31\", \"30\", \"31\", \"30\", \"31\", \"31\", \"30\", \"31\", \"30\", \"31\")\n\npath &lt;- \"data.xls\"\n\ncrear_fecha &lt;- function(mes, anio) {\n  mes_num &lt;- match(mes, meses)\n  ultimo_dia &lt;- ultimos_dias[mes_num]\n  fecha &lt;- paste0(ultimo_dia, \"/\", sprintf(\"%02d\", mes_num), \"/\", \"20\", anio)\n  return(dmy(fecha))\n}\n\nrdq_servicios &lt;- function(path = path, rango, servicio){\n  df &lt;- read_excel(path = path, range= rango,\n                    col_names = c(\"indicador\", \n                                  paste0(meses[9:12], \"_\", 23), \n                                  paste0(meses[1:8], \"_\", 24))) %&gt;%\n    mutate(servicio = servicio)\n  \n  df\n}"
+  },
+  {
+    "objectID": "02_rdq/01_comparacion_servicios_rdq.html#conjunto-de-datos",
+    "href": "02_rdq/01_comparacion_servicios_rdq.html#conjunto-de-datos",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "\n2 Conjunto de Datos",
+    "text": "2 Conjunto de Datos\n\nDiseño del conjunto de datos: formato largo y unificación de tablas por servicios.\n\n\nCodeacv_rdq &lt;- rdq_servicios(path = path, rango = \"A2:M12\", servicio = \"ACV\")\ncca_rdq &lt;- rdq_servicios(path = path, rango =\"A15:M25\", servicio = \"CCA\")\ncgd_rdq &lt;- rdq_servicios(path = path, rango =\"A28:M38\", servicio = \"CGD\")\ncom_rdq &lt;- rdq_servicios(path = path, rango =\"A41:M51\", servicio = \"COM\")\ncpe_rdq &lt;- rdq_servicios(path = path, rango =\"A54:M64\", servicio = \"CPE\")\ncpl_rdq &lt;- rdq_servicios(path = path, rango =\"A67:M77\", servicio = \"CPL\")\ncto_rdq &lt;- rdq_servicios(path = path, rango =\"A80:M90\", servicio = \"CTO\")\nder_rdq &lt;- rdq_servicios(path = path, rango =\"A93:M103\", servicio = \"DER\")\ngin_rdq &lt;- rdq_servicios(path = path, rango =\"A106:M116\", servicio = \"GIN\")\nnrc_rdq &lt;- rdq_servicios(path = path, rango =\"A119:M129\", servicio = \"NRC\")\nobs_rdq &lt;- rdq_servicios(path = path, rango =\"A132:M142\", servicio = \"OBS\")\noft_rdq &lt;- rdq_servicios(path = path, rango =\"A145:M155\", servicio = \"OFT\")\norl_rdq &lt;- rdq_servicios(path = path, rango =\"A158:M168\", servicio = \"ORL\")\ntra_rdq &lt;- rdq_servicios(path = path, rango =\"A171:M181\", servicio = \"TRA\")\nuro_rdq &lt;- rdq_servicios(path = path, rango =\"A184:M194\", servicio = \"URO\")\n\nhums &lt;- rbind(acv_rdq, cca_rdq, cgd_rdq, com_rdq, cpe_rdq, cpl_rdq, \n              cto_rdq, der_rdq, gin_rdq, nrc_rdq, obs_rdq, oft_rdq, orl_rdq, tra_rdq, uro_rdq)\n\ncols_con_guion &lt;- grep(\"_\", names(hums), value = TRUE)\n\nhums_long &lt;- pivot_longer(data = hums, cols = all_of(cols_con_guion), names_to = \"mes_anio\", values_to = \"valor\")\n\nhums_long &lt;- hums_long %&gt;% \n  mutate(mes = substr(mes_anio, 1, 3),\n         anio = substr(mes_anio, 5,6)\n         ) %&gt;%\n  mutate(fecha = as.Date(mapply(crear_fecha, mes, anio))) %&gt;%\n  mutate(anio = year(fecha),\n         mes = month(fecha))\n\n\nhums_long %&gt;% select(indicador, servicio, mes, anio, fecha, valor) %&gt;% DT::datatable()"
+  },
+  {
+    "objectID": "02_rdq/01_comparacion_servicios_rdq.html#total-entradas",
+    "href": "02_rdq/01_comparacion_servicios_rdq.html#total-entradas",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "\n3 Total Entradas",
+    "text": "3 Total Entradas"
+  },
+  {
+    "objectID": "02_rdq/01_comparacion_servicios_rdq.html#total-salidas",
+    "href": "02_rdq/01_comparacion_servicios_rdq.html#total-salidas",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "\n4 Total Salidas",
+    "text": "4 Total Salidas\n\n\n\n\n\n\n\n4.1 Según Tipo de Jornada\n\n\nOrdinadaria\nNO Ordinadaria\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n4.2 Según Tipo de Cirugía\n\n\nCon Ingreso\nCMA\nAmbulante"
+  },
+  {
+    "objectID": "02_rdq/01_comparacion_servicios_rdq.html#total-entradas-vs-salidas",
+    "href": "02_rdq/01_comparacion_servicios_rdq.html#total-entradas-vs-salidas",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "\n5 Total Entradas vs Salidas",
+    "text": "5 Total Entradas vs Salidas"
+  },
+  {
+    "objectID": "02_rdq/01_comparacion_servicios_rdq.html#total-activos-en-espera",
+    "href": "02_rdq/01_comparacion_servicios_rdq.html#total-activos-en-espera",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "\n6 Total Activos en Espera",
+    "text": "6 Total Activos en Espera\n\n\n\n\n\n\n\n&gt; 6 Meses Estructural\n&gt; 6 Meses\nGarantía Superada"
+  },
+  {
+    "objectID": "02_rdq/01_comparacion_servicios_rdq.html#demora-media",
+    "href": "02_rdq/01_comparacion_servicios_rdq.html#demora-media",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "\n7 Demora Media",
+    "text": "7 Demora Media"
+  },
+  {
+    "objectID": "02_rdq/tra_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "href": "02_rdq/tra_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas vs Total Entradas en RDQ",
+    "text": "2 Primeras Visitas vs Total Entradas en RDQ"
+  },
+  {
+    "objectID": "02_rdq/tra_rdq.html#total-entradas-vs-salidas",
+    "href": "02_rdq/tra_rdq.html#total-entradas-vs-salidas",
+    "title": "Traumatología",
+    "section": "\n3 Total Entradas vs Salidas",
+    "text": "3 Total Entradas vs Salidas\n\n\n\n\n\n\n\n3.1 Salidas según Tipo de Jornada\n\n\n\n\n\n\n3.2 Salidas según Tipo de Cirugía"
+  },
+  {
+    "objectID": "02_rdq/tra_rdq.html#activos-en-espera-todos",
+    "href": "02_rdq/tra_rdq.html#activos-en-espera-todos",
+    "title": "Traumatología",
+    "section": "\n4 Activos en Espera (Todos)",
+    "text": "4 Activos en Espera (Todos)"
+  },
+  {
+    "objectID": "02_rdq/tra_rdq.html#activos-en-espera-críticos",
+    "href": "02_rdq/tra_rdq.html#activos-en-espera-críticos",
+    "title": "Traumatología",
+    "section": "\n5 Activos en Espera (Críticos)",
+    "text": "5 Activos en Espera (Críticos)"
+  },
+  {
+    "objectID": "02_rdq/tra_rdq.html#demora-media",
+    "href": "02_rdq/tra_rdq.html#demora-media",
+    "title": "Traumatología",
+    "section": "\n6 Demora Media",
+    "text": "6 Demora Media"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Gestión de Área Quirúrgica",
+    "section": "",
+    "text": "Optimizar la Lista de Espera Quirúrgica (LEQ) del HUMS.\nObtener un mejor control y gestión más eficiente del Área Quirúrgica del HUMS.\n\n\n\n\n\nRecopilar, organizar, visualizar y comprender de forma rápida y eficaz toda la información relacionada con el flujo administrativo de la actividad quirúrgica del HUMS.\nAutomatizar la generación de informes que aporten valor en línea con los objetivos del Grupo de Trabajo.\nGenerar herramientas interactivas que ayuden a predecir la evolución natural de los indicadores de calidad que se establezcan y el impacto que sobre ellos podrían tener las potenciales medidas que se fueran tomando."
+  },
+  {
+    "objectID": "index.html#objetivos",
+    "href": "index.html#objetivos",
+    "title": "Gestión de Área Quirúrgica",
+    "section": "",
+    "text": "Optimizar la Lista de Espera Quirúrgica (LEQ) del HUMS.\nObtener un mejor control y gestión más eficiente del Área Quirúrgica del HUMS.\n\n\n\n\n\nRecopilar, organizar, visualizar y comprender de forma rápida y eficaz toda la información relacionada con el flujo administrativo de la actividad quirúrgica del HUMS.\nAutomatizar la generación de informes que aporten valor en línea con los objetivos del Grupo de Trabajo.\nGenerar herramientas interactivas que ayuden a predecir la evolución natural de los indicadores de calidad que se establezcan y el impacto que sobre ellos podrían tener las potenciales medidas que se fueran tomando."
+  },
+  {
+    "objectID": "nosotros/nosotros.html",
+    "href": "nosotros/nosotros.html",
+    "title": "¿Quiénes Somos?",
+    "section": "",
+    "text": "Dra María Blanca Villarroya Izquierdo (Subdirectora de Servicios Quirúrgicos)\nDª Patricia Lite (Subdirectora de Gestión Económica).\nDª Paloma Martínez (Subdirectora de Gestión y Sistemas Información)\nDª Dolores Zapatero González (Coordinadora de Admisión)\nDr Antonio Martínez Germán (Coordinador del Bloque Quirúrgico)\nDª Pilar García Gil (Jefe de Servicio de Informática)\nDª Cristina Peña Olle (Jefa de Servicio de Control de Gestión)\nDr Javier Martínez Andreu (Jefe Servicio de Anestesiología y Reanimación)\nDª Marisol Gracia Orer (Jefa de Sección del Comité de Programación Quirúrgica)\nDª Silvia Elisa Agon Sarmiento (Jefa de Grupo G.S)\nDª Blanca Gerona Iñiguez (Servicio de Informática)\nDr Raúl Embún Flor (FEA Servicio de Cirugía Torácica)"
+  },
+  {
+    "objectID": "03_quirofanos/quirofanos.html",
+    "href": "03_quirofanos/quirofanos.html",
+    "title": "Quirófanos",
+    "section": "",
+    "text": "Quirófanos"
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html",
+    "href": "03_quirofanos/cto_qfno.html",
+    "title": "Cirugía Torácica",
+    "section": "",
+    "text": "fecha: modificación del tipo de dato para manejarlo como una fecha.\n\nh_ini (hora de inicio de la cirugía concatenación fecha y h_ini\n\n\nh_fin (hora de finalización de la cirugía): concatenación fecha y h_fin\n\n\nh_15: creramos esta variable que representa las 15:00 horas del día que indica la variable fecha\n\n\ntiempo_quirurgico (minutos): variable de nueva creación resultado de h_fin - h_ini\n\n\nfin_posterior_15(TRUE vs FALSE): variable de nueva creación. TRUE si la cirugía termina después de las 15:00 horas.\n\nprolong: variable prolongación tal y como se registra es recodificada como TRUE/FALSE.\n\nprolong2: nueva variable que registra las prolongaciones de acuerdo con información ofrecida por SSQQ (variable ya importada desde archivo .xls que es transformada a formato lógico TRUE/FALSE)\n\n\n\n\n\n\n\n\n\nConversion de la variable anul a variable tipo lógico (TRUE vs FALSE)\n\n\nCreación de la variable lobectomia como procedimiento mayor más representativo que se utilizará para el cálculo del tiempo quirúrgico estandard en procedimientos mayores. La creación de dicha variable se realizado a partir de expresiones regulares en combinación con el tiempo quirúrgico y el área postquirúrgica requerida:\n\n\n\n\n\n\n\n\n\nCreación de la variable cirujano representando el cirujano principal del procedimiento. Dicho profesional se obtiene extrayendo el primer profesional de la lista de cirujanos de la tabla original."
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#importación-y-depuración-de-datos",
+    "href": "03_quirofanos/cto_qfno.html#importación-y-depuración-de-datos",
+    "title": "Cirugía Torácica",
+    "section": "",
+    "text": "fecha: modificación del tipo de dato para manejarlo como una fecha.\n\nh_ini (hora de inicio de la cirugía concatenación fecha y h_ini\n\n\nh_fin (hora de finalización de la cirugía): concatenación fecha y h_fin\n\n\nh_15: creramos esta variable que representa las 15:00 horas del día que indica la variable fecha\n\n\ntiempo_quirurgico (minutos): variable de nueva creación resultado de h_fin - h_ini\n\n\nfin_posterior_15(TRUE vs FALSE): variable de nueva creación. TRUE si la cirugía termina después de las 15:00 horas.\n\nprolong: variable prolongación tal y como se registra es recodificada como TRUE/FALSE.\n\nprolong2: nueva variable que registra las prolongaciones de acuerdo con información ofrecida por SSQQ (variable ya importada desde archivo .xls que es transformada a formato lógico TRUE/FALSE)\n\n\n\n\n\n\n\n\n\nConversion de la variable anul a variable tipo lógico (TRUE vs FALSE)\n\n\nCreación de la variable lobectomia como procedimiento mayor más representativo que se utilizará para el cálculo del tiempo quirúrgico estandard en procedimientos mayores. La creación de dicha variable se realizado a partir de expresiones regulares en combinación con el tiempo quirúrgico y el área postquirúrgica requerida:\n\n\n\n\n\n\n\n\n\nCreación de la variable cirujano representando el cirujano principal del procedimiento. Dicho profesional se obtiene extrayendo el primer profesional de la lista de cirujanos de la tabla original."
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#procedimientos-mensuales",
+    "href": "03_quirofanos/cto_qfno.html#procedimientos-mensuales",
+    "title": "Cirugía Torácica",
+    "section": "\n2 Procedimientos Mensuales",
+    "text": "2 Procedimientos Mensuales"
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#jornadas-de-mañana-jm",
+    "href": "03_quirofanos/cto_qfno.html#jornadas-de-mañana-jm",
+    "title": "Cirugía Torácica",
+    "section": "\n3 Jornadas de Mañana (JM)",
+    "text": "3 Jornadas de Mañana (JM)\n\n3.1 Tiempo Quirúrgico Útil JM\n\nAquellas jornadas quirúrgicas en las que existe un procedimiento cuya duración registrada es de 0 minutos son excluidas para el computo del tiempo quirúrgico útil.\n\n\n\n\n\n\n\n3.2 Tiempo de Finalización (JM)"
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#cancelaciones-mes",
+    "href": "03_quirofanos/cto_qfno.html#cancelaciones-mes",
+    "title": "Cirugía Torácica",
+    "section": "\n4 Cancelaciones / Mes",
+    "text": "4 Cancelaciones / Mes"
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#hora-de-cancelación",
+    "href": "03_quirofanos/cto_qfno.html#hora-de-cancelación",
+    "title": "Cirugía Torácica",
+    "section": "\n5 Hora de Cancelación",
+    "text": "5 Hora de Cancelación"
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#jornadas-continuas-jc-prolongaciones-p-y-excesos-de-jornada-ej",
+    "href": "03_quirofanos/cto_qfno.html#jornadas-continuas-jc-prolongaciones-p-y-excesos-de-jornada-ej",
+    "title": "Cirugía Torácica",
+    "section": "\n6 Jornadas Continuas (JC), Prolongaciones (P) y Excesos de Jornada (EJ)",
+    "text": "6 Jornadas Continuas (JC), Prolongaciones (P) y Excesos de Jornada (EJ)\n\n6.1 Mensuales (incluida Robótica)\n\n\n\n\n\n\n6.2 Procedimientos diarios en JC, Prolongación o Exceso-Jornada\n\nEn este gráfico se representan el número de procedimientos quirúrgicos mensuales realizados en días con o sin prolongación de jornada para cada tipo de fuente: SSQQ vs Transcripción Hoja Quirúrgica.\n\n\n\n\n\n\n\n6.3 Finalización de JC/P/EJ"
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#cirugía-robótica",
+    "href": "03_quirofanos/cto_qfno.html#cirugía-robótica",
+    "title": "Cirugía Torácica",
+    "section": "\n7 Cirugía Robótica",
+    "text": "7 Cirugía Robótica\n\nCreamos la variable robota partir de los registros con sombreado naranja."
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#cirugía-urgente",
+    "href": "03_quirofanos/cto_qfno.html#cirugía-urgente",
+    "title": "Cirugía Torácica",
+    "section": "\n8 Cirugía Urgente",
+    "text": "8 Cirugía Urgente"
+  },
+  {
+    "objectID": "03_quirofanos/cto_qfno.html#tiempo-quirúrgico-standard-lobectomía",
+    "href": "03_quirofanos/cto_qfno.html#tiempo-quirúrgico-standard-lobectomía",
+    "title": "Cirugía Torácica",
+    "section": "\n9 Tiempo Quirúrgico Standard (Lobectomía)",
+    "text": "9 Tiempo Quirúrgico Standard (Lobectomía)"
+  },
+  {
+    "objectID": "05_cuadro/cuadro.html",
+    "href": "05_cuadro/cuadro.html",
+    "title": "Cuadro de Mandos",
+    "section": "",
+    "text": "[1] \"   ANESTESIA_Y_REANIMACION\"                                                                                                                                                         \n [2] \"   Hospital_Universitario_Miguel_Servet\"                                                                                                                                            \n [3] \"   Servicio_de_Control_de_Gestión\"                                                                                                                                                  \n [4] \"\"                                                                                                                                                                                   \n [5] \"   Total23   Enero   Febrero   Marzo   Abril   Mayo   Junio   Julio   Acu24   Acu23   Dfcia   %\"                                                                                    \n [6] \"\"                                                                                                                                                                                   \n [7] \"\"                                                                                                                                                                                   \n [8] \"01_HOSPITALIZACION\"                                                                                                                                                                 \n [9] \"\"                                                                                                                                                                                   \n[10] \"HOSPITALIZACION\"                                                                                                                                                                    \n[11] \"Camas_Funcionamiento   7   6   7   6   7   7   7   6   7   7   -1   -8,00\"                                                                                                          \n[12] \"\"                                                                                                                                                                                   \n[13] \"Estancias   1.465   135   148   123   143   148   128   0   825   888   -63   -7,09\"                                                                                                \n[14] \"\"                                                                                                                                                                                   \n[15] \"Ingresos_programados   1.204   112   125   103   123   118   114   0   695   713   -18   -2,52\"                                                                                     \n[16] \"\"                                                                                                                                                                                   \n[17] \"Ingresos_urgentes   4   2   0   1   1   5   0   0   9   2   7   350,00\"                                                                                                             \n[18] \"\"                                                                                                                                                                                   \n[19] \"Total_Altas   1.208   106   123   114   121   117   120   0   701   710   -9   -1,27\"                                                                                               \n[20] \"\"                                                                                                                                                                                   \n[21] \"02CONSULTAS_EXTERNAS\"                                                                                                                                                               \n[22] \"\"                                                                                                                                                                                   \n[23] \"CONSULTAS_EXTERNAS_ACTIVIDAD\"                                                                                                                                                       \n[24] \"Consultas_Primeras_Mañana   18.203   1.492   1.547   1.481   1.794   1.878   1.554   1.387   11.133   11.099   34   0,31\"                                                           \n[25] \"\"                                                                                                                                                                                   \n[26] \"Consultas_Primeras_Tarde   3.298   328   332   300   408   387   399   120   2.274   2.084   190   9,12\"                                                                            \n[27] \"\"                                                                                                                                                                                   \n[28] \"Consultas_Sucesivas_Mañana   5.420   417   512   374   520   518   459   553   3.353   3.325   28   0,84\"                                                                           \n[29] \"\"                                                                                                                                                                                   \n[30] \"Consultas_Sucesivas_Tarde   538   41   47   42   42   50   51   68   341   354   -13   -3,67\"                                                                                       \n[31] \"\"                                                                                                                                                                                   \n[32] \"Interconsultas   2.116   190   224   173   196   199   144   17   1.143   1.394   -251   -18,01\"                                                                                    \n[33] \"\"                                                                                                                                                                                   \n[34] \"CONSULTAS_EXTERNAS_DEMORAS\"                                                                                                                                                         \n[35] \"1as_cons_pendientes_en_Buzon   2   0   5   62   159   82   173   143   143   11   132_1.200,00\"                                                                                     \n[36] \"\"                                                                                                                                                                                   \n[37] \"1as_cons_progr_demora_&gt;60_dias_no_demora   309   319   358   210   87   303   374   267   267   497   -230   -46,28\"                                                                \n[38] \"vol\"                                                                                                                                                                                \n[39] \"Consultas_reprogramadas   843   204   101   63   49   92   94   87   690   593   97   16,36\"                                                                                        \n[40] \"\"                                                                                                                                                                                   \n[41] \"Total_Consultas_pendientes_(prog+buzon)   2.106   2.211   2.264   2.441   2.302   2.216   1.955   1.919   1.919   2.246   -327   -14,56\"                                            \n[42] \"\"                                                                                                                                                                                   \n[43] \"07TECNICAS\"                                                                                                                                                                         \n[44] \"\"                                                                                                                                                                                   \n[45] \"TECNICAS_ANESTESIA\"                                                                                                                                                                 \n[46] \"Anestesia_fuera_de_quirofano   2.546   240   239   198   264   277   273   0   1.491   1.537   -46   -2,99\"                                                                         \n[47] \"\"                                                                                                                                                                                   \n[48] \"Anestesia_loco-regional   12.104   985   1.095   881   1.055   1.141   998   817   6.972   7.546   -574   -7,61\"                                                                    \n[49] \"\"                                                                                                                                                                                   \n[50] \"Asistencias_en_URPA   6.469   617   747   643   687   767   587   0   4.048   4.428   -380   -8,58\"                                                                                 \n[51] \"\"                                                                                                                                                                                   \n[52] \"Venoclisis_central   280   8   12   18   12   8   10   0   68   213   -145   -68,08\"                                                                                                \n[53] \"\"                                                                                                                                                                                   \n[54] \"\"                                                                                                                                                                                   \n[55] \"\"                                                                                                                                                                                   \n[56] \"\"                                                                                                                                                                                   \n[57] \"S:\\\\GESTION_ASISTENCIAL\\\\1_NUEVO_LIBRO_2024\\\\57_DIRECCIONES_Y_SUBDIRECCIONES\\\\Subdireccion_SS_Quirurgicos_(Blanca_Izquierdo_V)\\\\1_Servicios_Quirúrgicos.rpt   22/08/2024   12:28:48\""
+  },
+  {
+    "objectID": "05_cuadro/cuadro.html#anestesia",
+    "href": "05_cuadro/cuadro.html#anestesia",
+    "title": "Cuadro de Mandos",
+    "section": "",
+    "text": "[1] \"   ANESTESIA_Y_REANIMACION\"                                                                                                                                                         \n [2] \"   Hospital_Universitario_Miguel_Servet\"                                                                                                                                            \n [3] \"   Servicio_de_Control_de_Gestión\"                                                                                                                                                  \n [4] \"\"                                                                                                                                                                                   \n [5] \"   Total23   Enero   Febrero   Marzo   Abril   Mayo   Junio   Julio   Acu24   Acu23   Dfcia   %\"                                                                                    \n [6] \"\"                                                                                                                                                                                   \n [7] \"\"                                                                                                                                                                                   \n [8] \"01_HOSPITALIZACION\"                                                                                                                                                                 \n [9] \"\"                                                                                                                                                                                   \n[10] \"HOSPITALIZACION\"                                                                                                                                                                    \n[11] \"Camas_Funcionamiento   7   6   7   6   7   7   7   6   7   7   -1   -8,00\"                                                                                                          \n[12] \"\"                                                                                                                                                                                   \n[13] \"Estancias   1.465   135   148   123   143   148   128   0   825   888   -63   -7,09\"                                                                                                \n[14] \"\"                                                                                                                                                                                   \n[15] \"Ingresos_programados   1.204   112   125   103   123   118   114   0   695   713   -18   -2,52\"                                                                                     \n[16] \"\"                                                                                                                                                                                   \n[17] \"Ingresos_urgentes   4   2   0   1   1   5   0   0   9   2   7   350,00\"                                                                                                             \n[18] \"\"                                                                                                                                                                                   \n[19] \"Total_Altas   1.208   106   123   114   121   117   120   0   701   710   -9   -1,27\"                                                                                               \n[20] \"\"                                                                                                                                                                                   \n[21] \"02CONSULTAS_EXTERNAS\"                                                                                                                                                               \n[22] \"\"                                                                                                                                                                                   \n[23] \"CONSULTAS_EXTERNAS_ACTIVIDAD\"                                                                                                                                                       \n[24] \"Consultas_Primeras_Mañana   18.203   1.492   1.547   1.481   1.794   1.878   1.554   1.387   11.133   11.099   34   0,31\"                                                           \n[25] \"\"                                                                                                                                                                                   \n[26] \"Consultas_Primeras_Tarde   3.298   328   332   300   408   387   399   120   2.274   2.084   190   9,12\"                                                                            \n[27] \"\"                                                                                                                                                                                   \n[28] \"Consultas_Sucesivas_Mañana   5.420   417   512   374   520   518   459   553   3.353   3.325   28   0,84\"                                                                           \n[29] \"\"                                                                                                                                                                                   \n[30] \"Consultas_Sucesivas_Tarde   538   41   47   42   42   50   51   68   341   354   -13   -3,67\"                                                                                       \n[31] \"\"                                                                                                                                                                                   \n[32] \"Interconsultas   2.116   190   224   173   196   199   144   17   1.143   1.394   -251   -18,01\"                                                                                    \n[33] \"\"                                                                                                                                                                                   \n[34] \"CONSULTAS_EXTERNAS_DEMORAS\"                                                                                                                                                         \n[35] \"1as_cons_pendientes_en_Buzon   2   0   5   62   159   82   173   143   143   11   132_1.200,00\"                                                                                     \n[36] \"\"                                                                                                                                                                                   \n[37] \"1as_cons_progr_demora_&gt;60_dias_no_demora   309   319   358   210   87   303   374   267   267   497   -230   -46,28\"                                                                \n[38] \"vol\"                                                                                                                                                                                \n[39] \"Consultas_reprogramadas   843   204   101   63   49   92   94   87   690   593   97   16,36\"                                                                                        \n[40] \"\"                                                                                                                                                                                   \n[41] \"Total_Consultas_pendientes_(prog+buzon)   2.106   2.211   2.264   2.441   2.302   2.216   1.955   1.919   1.919   2.246   -327   -14,56\"                                            \n[42] \"\"                                                                                                                                                                                   \n[43] \"07TECNICAS\"                                                                                                                                                                         \n[44] \"\"                                                                                                                                                                                   \n[45] \"TECNICAS_ANESTESIA\"                                                                                                                                                                 \n[46] \"Anestesia_fuera_de_quirofano   2.546   240   239   198   264   277   273   0   1.491   1.537   -46   -2,99\"                                                                         \n[47] \"\"                                                                                                                                                                                   \n[48] \"Anestesia_loco-regional   12.104   985   1.095   881   1.055   1.141   998   817   6.972   7.546   -574   -7,61\"                                                                    \n[49] \"\"                                                                                                                                                                                   \n[50] \"Asistencias_en_URPA   6.469   617   747   643   687   767   587   0   4.048   4.428   -380   -8,58\"                                                                                 \n[51] \"\"                                                                                                                                                                                   \n[52] \"Venoclisis_central   280   8   12   18   12   8   10   0   68   213   -145   -68,08\"                                                                                                \n[53] \"\"                                                                                                                                                                                   \n[54] \"\"                                                                                                                                                                                   \n[55] \"\"                                                                                                                                                                                   \n[56] \"\"                                                                                                                                                                                   \n[57] \"S:\\\\GESTION_ASISTENCIAL\\\\1_NUEVO_LIBRO_2024\\\\57_DIRECCIONES_Y_SUBDIRECCIONES\\\\Subdireccion_SS_Quirurgicos_(Blanca_Izquierdo_V)\\\\1_Servicios_Quirúrgicos.rpt   22/08/2024   12:28:48\""
+  },
+  {
+    "objectID": "05_cuadro/cuadro.html#angiología-y-cirugía-vascular",
+    "href": "05_cuadro/cuadro.html#angiología-y-cirugía-vascular",
+    "title": "Cuadro de Mandos",
+    "section": "\n2 Angiología y Cirugía Vascular",
+    "text": "2 Angiología y Cirugía Vascular\n\n2.1 Urgencias\n\n2.2 Hospitalizacion\n\n2.3 Consultas Externas"
+  }
+]

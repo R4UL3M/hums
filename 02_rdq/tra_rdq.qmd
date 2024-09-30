@@ -1,0 +1,182 @@
+---
+title: "Traumatología"
+params:
+  codigo: "TRA"
+---
+
+```{r}
+library(tidyverse)
+
+```
+
+
+
+## Datos: Primeras Visitas y  RDQ
+
+```{r}
+
+pv <- readRDS(file = paste0("../01_consultas/", params$codigo, "_pv", ".RDS"))
+
+hums_long <- readRDS(file = "hums_long.RDS")
+
+rdq <- hums_long %>% 
+  filter(servicio == params$codigo) %>%
+  pivot_wider(id_cols = c(mes, anio), names_from = "indicador", values_from = valor) %>%
+  rename(Mes = mes, Anio = anio) 
+         
+
+rdq_pv <- rdq %>% left_join(pv, by = c("Mes", "Anio")) %>% 
+  mutate(Fecha = as.Date(
+           paste0(Anio, "-", Mes, "-", 
+                  case_when(Mes %in% c(1,3,5,7,8,10,12) ~ 31, 
+                            Mes == 2 ~ 28,
+                            Mes %in% c(4,6,9,11) ~ 30
+                     )
+           )
+           )
+         ) %>% 
+  select(Fecha, everything())
+
+```
+
+
+## Primeras Visitas vs Total Entradas en RDQ
+
+```{r}
+
+rdq_pv %>%
+  ggplot()+
+  geom_line(aes(x=Fecha, y=primeras_visitas), color="steelblue", size=1, alpha = 0.5)+
+  geom_line(aes(x=Fecha, y=`Total Entradas`), color="green", size=1) +
+  geom_label(aes(label = `Total Entradas`, x=Fecha, y=`Total Entradas`), size=3) +
+  labs(y=NULL, x=NULL, caption = "Primeras Visitas CCEE (azul) vs Entradas RDQ (verde)")
+
+```
+
+
+
+<br>
+
+## Total Entradas vs Salidas
+
+```{r}
+
+
+rdq_pv %>%
+  ggplot()+
+  geom_line(aes(x=Fecha, y=`Total Salidas`), color="red", size=1)+
+  geom_label(aes(label=`Total Salidas`, x=Fecha, y=`Total Salidas`), size=3)+
+  geom_line(aes(x=Fecha, y=`Total Entradas`), color="green", size=1, alpha=0.3) +
+  labs(y=NULL, x=NULL, caption = "Entradas RDQ (verde) vs Salidas RDQ (rojo)")
+
+```
+
+<br>
+
+
+### Salidas según Tipo de Jornada
+
+
+```{r}
+
+
+rdq_pv %>% 
+  mutate(`Salidas jornada NO ordinaria`= `Total Salidas`- `Salidas jornada ordinaria`) %>%
+  pivot_longer(cols = c("Salidas jornada NO ordinaria", "Salidas jornada ordinaria"),names_to = "jornada", values_to = "n") %>%
+  select(Fecha, Mes, Anio, jornada, n) %>%
+  
+  ggplot(aes(x=Fecha, y=n, fill = jornada)) +
+  geom_col(position = "dodge")+
+  theme(
+    axis.text.x = element_text(angle=90),
+    legend.position = "top"
+  )+
+  labs(x = NULL, y=NULL, fill = NULL)
+
+
+```
+
+
+### Salidas según Tipo de Cirugía
+
+
+
+```{r}
+
+rdq_pv %>% 
+  pivot_longer(cols = c("C. con ingreso", "C. mayor ambulatoria", "C. ambulante"),names_to = "cirugia", values_to = "n") %>%
+  select(Fecha, Mes, Anio, cirugia, n) %>%
+  mutate(cirugia = fct_relevel(factor(cirugia), "C. con ingreso", "C. mayor ambulatoria", "C. ambulante")) %>%
+  
+  ggplot(aes(x=Fecha, y=n, fill = cirugia)) +
+  geom_col(position = "dodge")+
+  theme(
+    axis.text.x = element_text(angle=90),
+    legend.position = "top"
+  )+
+  labs(x = NULL, fill = NULL, y=NULL)
+
+```
+
+
+<br>
+
+
+## Activos en Espera (Todos)
+
+```{r}
+
+rdq_pv %>% 
+  pivot_longer(cols = c("Activos en espera", "> 6 meses estructural", "> 6 meses", "Pacientes garantia superada"),
+               names_to = "activos", values_to = "n") %>%
+  select(Fecha, Mes, Anio, activos, n) %>%
+  mutate(activos = fct_relevel(factor(activos), "Activos en espera", "> 6 meses", "> 6 meses estructural", "Pacientes garantia superada")) %>%
+  ggplot(aes(x=Fecha, y= n, fill = activos)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("darkorange", "firebrick1", "firebrick4", "darkorchid4"))+
+  theme(
+    axis.text.x = element_text(angle=90),
+    legend.position = "top")+
+  labs(y=NULL, x=NULL, fill=NULL)
+
+```
+
+
+## Activos en Espera (Críticos)
+
+```{r}
+
+rdq_pv %>% 
+  pivot_longer(cols = c("Activos en espera", "> 6 meses estructural", "> 6 meses", "Pacientes garantia superada"),
+               names_to = "activos", values_to = "n") %>%
+  select(Fecha, Mes, Anio, activos, n) %>%
+  filter(activos != "Activos en espera") %>%
+  mutate(activos = fct_relevel(factor(activos), "> 6 meses", "> 6 meses estructural", "Pacientes garantia superada")) %>%
+  ggplot(aes(x=Fecha, y= n, fill = activos)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("firebrick1", "firebrick4", "darkorchid4"))+
+  theme(
+    axis.text.x = element_text(angle=90),
+    legend.position = "top")+
+  labs(y=NULL, x=NULL, fill=NULL)
+```
+
+
+
+<br>
+
+## Demora Media
+
+```{r}
+
+maximo <- max(rdq_pv$`Demora media activos`)
+
+rdq_pv %>% ggplot(aes(x=Fecha, y=`Demora media activos`))+  
+  geom_line(color = "royalblue2", size=2) +
+  geom_label(aes(label=`Demora media activos`))+
+  scale_y_continuous(limits = c(0,maximo))+
+  theme(axis.text.x = element_text(angle=90))+
+  labs(y="Días\n", x="\nFecha")
+
+```
+

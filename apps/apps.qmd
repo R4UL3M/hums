@@ -1,0 +1,6 @@
+---
+title: "Aplicaciones"
+format: html
+---
+
+Aplicaciones

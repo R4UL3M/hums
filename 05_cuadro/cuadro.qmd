@@ -1,0 +1,330 @@
+---
+title: "Cuadro de Mandos"
+subtitle: "Servicios Quirúrgicos"
+format: html
+---
+
+```{r}
+library(pdftools)
+library(tidyverse)
+library(readxl)
+rm(list=ls())
+```
+
+
+```{r}
+
+
+pdf <- pdf_text(pdf = "2024/julio/7_servicios_quirurgicos.pdf") %>% strsplit(split = "\n")
+
+reducir_espacios <- function(x) {
+ x <- gsub(pattern = " {2,}", replacement = "   ", x)
+ gsub("(?<! ) (?! )", "_", x, perl = TRUE)
+  }
+
+pdf <- lapply(pdf, reducir_espacios)
+
+nombre_columnas <- trimws(pdf[[1]][5])
+nombre_columnas <- c("indicador", unlist(str_split(string = nombre_columnas, pattern = " {1,}")))
+```
+
+
+## Anestesia
+
+### Hospitalización
+
+```{r}
+#| label: anestesia hospitalizacion
+
+datos <- pdf[[1]][c(11,13,15,17, 19)]
+row_11 <- unlist(str_split(string = pdf[[1]][11], pattern = " {1,}"))
+row_13 <- unlist(str_split(string = pdf[[1]][13], pattern = " {1,}"))
+row_15 <- unlist(str_split(string = pdf[[1]][15], pattern = " {1,}"))
+row_17 <- unlist(str_split(string = pdf[[1]][17], pattern = " {1,}"))
+row_19 <- unlist(str_split(string = pdf[[1]][19], pattern = " {1,}"))
+
+df <- rbind(row_11, row_13, row_15, row_17, row_19)
+anestesia_hospitalizacion <- as.data.frame(df, row.names = FALSE)
+
+colnames(anestesia_hospitalizacion) <- nombre_columnas
+anestesia_hospitalizacion <- anestesia_hospitalizacion %>% mutate(grupo = "hospitalizacion")
+
+```
+
+
+
+### Consultas Externas
+
+```{r}
+#| label: anestesia consultas
+
+
+datos <- pdf[[1]][c(24,26,28,30, 32, 35, 37, 39, 41)]
+row_24 <- unlist(str_split(string = pdf[[1]][24], pattern = " {1,}"))
+row_26 <- unlist(str_split(string = pdf[[1]][26], pattern = " {1,}"))
+row_28 <- unlist(str_split(string = pdf[[1]][28], pattern = " {1,}"))
+row_30 <- unlist(str_split(string = pdf[[1]][30], pattern = " {1,}"))
+row_32 <- unlist(str_split(string = pdf[[1]][32], pattern = " {1,}"))
+row_35 <- unlist(str_split(string = pdf[[1]][35], pattern = " {1,}"))
+
+row_35 <- c(row_35[1], unlist(str_split(row_35[-1], pattern = "_")))
+
+row_37 <- unlist(str_split(string = pdf[[1]][37], pattern = " {1,}"))
+row_39 <- unlist(str_split(string = pdf[[1]][39], pattern = " {1,}"))
+row_41 <- unlist(str_split(string = pdf[[1]][41], pattern = " {1,}"))
+
+df <- rbind(row_24, row_26, row_28, row_30, row_32, row_35, row_37, row_39, row_41)
+anestesia_consultas <- as.data.frame(df, row.names = FALSE)
+
+colnames(anestesia_consultas) <- nombre_columnas
+anestesia_consultas <- anestesia_consultas %>% mutate(grupo = "consultas")
+
+```
+
+### Técnicas
+
+```{r}
+#| label: anestesia tecnicas
+
+pdf[[1]]
+
+datos <- pdf[[1]][c(46, 48, 50, 52)]
+row_46 <- unlist(str_split(string = pdf[[1]][46], pattern = " {1,}"))
+row_48 <- unlist(str_split(string = pdf[[1]][48], pattern = " {1,}"))
+row_50 <- unlist(str_split(string = pdf[[1]][50], pattern = " {1,}"))
+row_52 <- unlist(str_split(string = pdf[[1]][52], pattern = " {1,}"))
+
+
+df <- rbind(row_46, row_48, row_50, row_52)
+anestesia_tecnicas <- as.data.frame(df, row.names = FALSE)
+
+colnames(anestesia_tecnicas) <- nombre_columnas
+anestesia_tecnicas <- anestesia_tecnicas %>% mutate(grupo = "tecnicas")
+
+```
+
+
+### Reanimación
+
+```{r}
+#| label: anestesia reanimacion
+
+
+datos <- pdf[[2]][seq(11,19,2)]
+row_11 <- unlist(str_split(string = pdf[[2]][11], pattern = " {1,}"))
+row_13 <- unlist(str_split(string = pdf[[2]][13], pattern = " {1,}"))
+row_15 <- unlist(str_split(string = pdf[[2]][15], pattern = " {1,}"))
+row_17 <- unlist(str_split(string = pdf[[2]][17], pattern = " {1,}"))
+row_19 <- unlist(str_split(string = pdf[[2]][19], pattern = " {1,}"))
+
+df <- rbind(row_11, row_13, row_15, row_17, row_19)
+anestesia_reanimacion <- as.data.frame(df, row.names = FALSE)
+
+colnames(anestesia_reanimacion) <- nombre_columnas
+anestesia_reanimacion <- anestesia_reanimacion %>% mutate(grupo = "reanimacion")
+
+```
+
+### Hospital de Día
+
+
+```{r}
+#| label: hospital de dia
+
+
+datos <- pdf[[2]][seq(26,30,2)]
+row_26 <- unlist(str_split(string = pdf[[2]][26], pattern = " {1,}"))
+row_28 <- unlist(str_split(string = pdf[[2]][28], pattern = " {1,}"))
+row_30 <- unlist(str_split(string = pdf[[2]][30], pattern = " {1,}"))
+
+df <- rbind(row_26, row_28, row_30)
+anestesia_hospital_dia <- as.data.frame(df, row.names = FALSE)
+
+colnames(anestesia_hospital_dia) <- nombre_columnas
+
+anestesia_hospital_dia <- anestesia_hospital_dia %>% mutate(grupo = "hospital_dia")
+
+```
+
+### Unidad Dolor
+
+```{r}
+#| label: anestesia dolor
+
+datos <- pdf[[2]][c(35, 37, 40, 42, seq(45,53,2))]
+row_35 <- unlist(str_split(string = pdf[[2]][35], pattern = " {1,}"))
+row_37 <- unlist(str_split(string = pdf[[2]][37], pattern = " {1,}"))
+row_40 <- unlist(str_split(string = pdf[[2]][40], pattern = " {1,}"))
+row_42 <- unlist(str_split(string = pdf[[2]][42], pattern = " {1,}"))
+row_45 <- unlist(str_split(string = pdf[[2]][45], pattern = " {1,}"))
+row_47 <- unlist(str_split(string = pdf[[2]][47], pattern = " {1,}"))
+row_49 <- unlist(str_split(string = pdf[[2]][49], pattern = " {1,}"))
+row_51 <- unlist(str_split(string = pdf[[2]][51], pattern = " {1,}"))
+row_53 <- unlist(str_split(string = pdf[[2]][53], pattern = " {1,}"))
+
+df <- rbind(row_35, row_37, row_40, row_42, row_45, row_47, row_49, row_51, row_53)
+anestesia_dolor <- as.data.frame(df, row.names = FALSE)
+
+colnames(anestesia_dolor) <- nombre_columnas
+
+
+
+datos_ <- pdf[[3]][c(seq(7,17,2), 20,22)]
+row_7 <- unlist(str_split(string = pdf[[3]][7], pattern = " {1,}"))
+row_9 <- unlist(str_split(string = pdf[[3]][9], pattern = " {1,}"))
+row_11 <- unlist(str_split(string = pdf[[3]][11], pattern = " {1,}"))
+row_13 <- unlist(str_split(string = pdf[[3]][13], pattern = " {1,}"))
+row_15 <- unlist(str_split(string = pdf[[3]][15], pattern = " {1,}"))
+row_17 <- unlist(str_split(string = pdf[[3]][17], pattern = " {1,}"))
+row_20 <- unlist(str_split(string = pdf[[3]][20], pattern = " {1,}"))
+row_22 <- unlist(str_split(string = pdf[[3]][22], pattern = " {1,}"))
+
+
+df_ <- rbind(row_7, row_9, row_11, row_13, row_15, row_17, row_20, row_22)
+anestesia_dolor_ <- as.data.frame(df_, row.names = FALSE)
+
+colnames(anestesia_dolor_) <- nombre_columnas
+
+anestesia_dolor <- rbind(anestesia_dolor, anestesia_dolor_)
+anestesia_dolor <- anestesia_dolor %>% mutate(grupo = "dolor")
+
+rm(anestesia_dolor_)
+
+```
+
+### Gastos
+
+
+```{r}
+#| label: anestesia gastos
+
+
+datos <- pdf[[3]][seq(27,35,2)]
+row_27 <- unlist(str_split(string = pdf[[3]][27], pattern = " {1,}"))
+row_29 <- unlist(str_split(string = pdf[[3]][29], pattern = " {1,}"))
+
+row_29 <- c(row_29[1], unlist(str_split(string = row_29[-1], pattern = "_")))
+
+row_31 <- unlist(str_split(string = pdf[[3]][31], pattern = " {1,}"))
+row_33 <- unlist(str_split(string = pdf[[3]][33], pattern = " {1,}"))
+row_35 <- unlist(str_split(string = pdf[[3]][35], pattern = " {1,}"))
+
+
+df <- rbind(row_27, row_29, row_31, row_33, row_35)
+anestesia_gastos <- as.data.frame(df, row.names = FALSE)
+
+colnames(anestesia_gastos) <- nombre_columnas
+anestesia_gastos <- anestesia_gastos %>% mutate(grupo = "gastos")
+
+```
+
+### Índices
+
+```{r}
+#| label: indices
+
+datos <- pdf[[3]][c(50,52,54)]
+row_50 <- unlist(str_split(string = pdf[[3]][50], pattern = " {1,}"))
+row_52 <- unlist(str_split(string = pdf[[3]][52], pattern = " {1,}"))
+row_54 <- unlist(str_split(string = pdf[[3]][54], pattern = " {1,}"))
+
+row_54 <- c(row_54, c(NA, NA, NA, NA))
+
+
+df <- rbind(row_50, row_52, row_54)
+anestesia_indices <- as.data.frame(df, row.names = FALSE)
+
+colnames(anestesia_indices) <- nombre_columnas
+
+anestesia_indices <- anestesia_indices %>% mutate(grupo = "indices")
+
+```
+
+
+
+```{r}
+
+anestesia_todo <- ls(pattern = "^anestesia")
+
+dfs <- mget(x = anestesia_todo)
+
+anestesia <- do.call(what = rbind, args = dfs[-1])
+
+anestesia <- anestesia %>% mutate(anio = 2024)
+View(anestesia)
+```
+
+
+## Angiología y Cirugía Vascular
+
+
+### Urgencias
+
+```{r}
+#| label: acv urgencias
+ 
+datos <- pdf[[4]][c(10)]
+row_10 <- unlist(str_split(string = pdf[[4]][10], pattern = " {1,}"))
+
+
+df <- rbind(row_10)
+acv_urgencias <- as.data.frame(df)
+
+colnames(acv_urgencias) <- nombre_columnas
+acv_urgencias <- acv_urgencias %>% mutate(grupo = "urgencias")
+
+```
+
+
+### Hospitalizacion
+
+```{r}
+#| label: acv hospitalizacion
+ 
+datos <- pdf[[4]][seq(17,27,2)]
+row_17 <- unlist(str_split(string = pdf[[4]][17], pattern = " {1,}"))
+row_19 <- unlist(str_split(string = pdf[[4]][19], pattern = " {1,}"))
+row_21 <- unlist(str_split(string = pdf[[4]][21], pattern = " {1,}"))
+row_23 <- unlist(str_split(string = pdf[[4]][23], pattern = " {1,}"))
+row_25 <- unlist(str_split(string = pdf[[4]][25], pattern = " {1,}"))
+row_27 <- unlist(str_split(string = pdf[[4]][27], pattern = " {1,}"))
+
+
+df <- rbind(row_17, row_19, row_21, row_23, row_25, row_27)
+acv_hospitalizacion <- as.data.frame(df)
+
+colnames(acv_hospitalizacion) <- nombre_columnas
+acv_hospitalizacion <- acv_hospitalizacion %>% mutate(grupo = "hospitalizacion")
+
+```
+
+### Consultas Externas
+
+```{r}
+
+pdf[[4]] <- pdf[[4]][pdf[[4]] != ""] 
+pdf[[4]] <- trimws(pdf[[4]])
+nombres_col <- paste("indicador", pdf[[4]][grep("^Total2", pdf[[4]])])
+nombres_col <- unlist(strsplit(nombres_col, " {1,}"))
+
+
+text <- pdf[[4]][nchar(pdf[[4]]) > 40][-1]
+text <- strsplit(text, " {1,}")
+text <- text[-length(text)]
+
+df <- do.call(rbind, lapply(text, function(x) {
+  length(x) <- max(sapply(text, length))  # Asegurar que todas las filas tengan la misma longitud
+  return(x)
+}))
+
+df <- df[-nrow(df),]
+
+df <- as.data.frame(df)
+
+df <- setNames(df, nm = nombres_col)
+
+View(df)
+
+```
+
+

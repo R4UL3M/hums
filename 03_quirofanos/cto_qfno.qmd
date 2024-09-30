@@ -1,0 +1,407 @@
+---
+title: "Cirugía Torácica"
+params:
+  data: "cto"
+---
+
+
+```{r}
+
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(openxlsx)
+library(DT)
+library(gt)
+library(patchwork)
+
+```
+
+
+
+
+## Importación y Depuración de Datos
+
+
+```{r}
+
+data <- readxl::read_excel(paste0(params$data, "/data2.xls"), skip = 5) %>% janitor::clean_names() %>%
+  select(-c("nhc", "cia"))
+
+data %>% head(5) %>% DT::datatable(options = list(
+  initComplete = JS(
+    "function(settings, json) {",
+    "$('table').css({'font-size': '12px'});",
+    "}"
+  )
+))
+
+```
+
+
+- `fecha`: modificación del tipo de dato para manejarlo como una fecha. 
+- `h_ini` (hora de inicio de la cirugía concatenación `fecha` y `h_ini`
+- `h_fin` (hora de finalización de la cirugía): concatenación `fecha` y `h_fin`
+- `h_15`: creramos esta variable que representa las 15:00 horas del día que indica la variable `fecha` 
+- `tiempo_quirurgico` (minutos): variable de nueva creación resultado de `h_fin` - `h_ini`
+- `fin_posterior_15`(TRUE vs FALSE): variable de nueva creación. TRUE si la cirugía termina después de las 15:00 horas.
+- `prolong`: variable `prolongación` tal y como se registra es recodificada como TRUE/FALSE.
+- `prolong2`: nueva variable que registra las prolongaciones de acuerdo con información ofrecida por SSQQ (variable ya importada desde archivo .xls que es transformada a formato lógico TRUE/FALSE)
+
+
+```{r}
+
+data$fecha <- as.Date(data$fecha, format = "%d/%m/%Y") 
+
+data$h_ini <- as.POSIXct(paste(data$fecha, data$h_ini), format = "%Y-%m-%d %H:%M", tz = "UTC")
+
+data$h_fin <- as.POSIXct(paste(data$fecha, data$h_fin), format = "%Y-%m-%d %H:%M", tz = "UTC") 
+
+data$h_15 <- as.POSIXct(paste(data$fecha, "15:00"), format = "%Y-%m-%d %H:%M", tz = "UTC")
+
+data <- data %>% mutate(tiempo_quirurgico = difftime(h_fin, h_ini, units = "mins"),
+                      fin_posterior_15 = format(data$h_fin, "%H:%M:%S") > "15:00:00")
+
+data <- data %>% mutate(prolong = if_else(prolong == "N", FALSE, TRUE))
+
+data <- data %>% mutate(prolong2 = if_else(prolong2 == "FALSE", FALSE, TRUE))
+
+
+data %>% 
+  select(fecha, h_ini, h_fin, h_15, tiempo_quirurgico, fin_posterior_15) %>% 
+  arrange(fecha) %>%
+  head(5) %>%
+  DT::datatable(options = list(
+  initComplete = JS(
+    "function(settings, json) {",
+    "$('table').css({'font-size': '14px'});",
+    "}"
+  )
+)) 
+
+```
+
+- Conversion de la variable `anul` a variable tipo lógico (TRUE vs FALSE)
+
+```{r}
+
+data <- data %>% mutate(anul = if_else(is.na(anul), FALSE, TRUE))
+
+
+```
+
+
+- Creación de la variable `lobectomia` como procedimiento mayor más representativo que se utilizará para el cálculo del tiempo quirúrgico estandard en  procedimientos mayores. La creación de dicha variable se realizado a partir de expresiones regulares en combinación con el tiempo quirúrgico y el área postquirúrgica requerida:
+
+```{r}
+
+data$lobectomia <- grepl("LOBECTOMIA|LSD|LM|LID|LII|LSI|LOBE|CULMEN|LINGULECTOMIA|SEGMENTECTOMIA|NEUMONECTOMIA|NEUMECTOMIA", data$procedimientos, ignore.case = TRUE) & 
+                   !grepl("ATIPICA|CUÑA|\bRA\b|^RA\b", data$procedimientos, ignore.case = TRUE) &  
+                   data$a_postqui %in% c("REANIMACION", "UCI") & as.numeric(data$tiempo_quirurgico) > 120
+
+set.seed(1)
+data %>% select(procedimientos, a_postqui, tiempo_quirurgico,lobectomia) %>% 
+  # sample_n(20) %>%
+  DT::datatable(options = list(
+  initComplete = JS(
+    "function(settings, json) {",
+    "$('table').css({'font-size': '14px'});",
+    "}"
+  )
+))
+
+```
+
+
+- Creación de la variable `cirujano` representando el cirujano principal del procedimiento. Dicho profesional se obtiene extrayendo el primer profesional de la lista de cirujanos de la tabla original. 
+
+```{r}
+
+data$cirujano_pral <- sub("\\s*\\(Pral\\).*", "", data$cirujanos)
+
+data %>% select(cirujanos, cirujano_pral) %>% head(5) %>% DT::datatable()
+
+```
+
+
+
+## Procedimientos Mensuales 
+
+```{r}
+
+data %>% filter(anul == FALSE) %>% count(Mes = month(fecha)) %>% 
+  ggplot(aes(x= factor(Mes), y = n)) +
+  geom_col(fill="steelblue", width = 0.7)+
+  geom_label(aes(label=n))+
+  theme_replace() +
+  labs(x = "\nMes", y="Procedimientos\n")
+
+```
+
+## Jornadas de Mañana (JM)
+
+
+###  Tiempo Quirúrgico Útil JM
+
+- Aquellas jornadas quirúrgicas en las que existe un procedimiento cuya duración registrada es de 0 minutos son excluidas para el computo del tiempo quirúrgico útil. 
+
+```{r}
+
+fechas_tiempo0 <- data %>% filter(tiempo_quirurgico == 0) %>% pull(fecha)
+
+data %>% 
+  filter(anul==FALSE & tipo_int != "URGENTE" & prolong2 ==FALSE) %>% 
+  filter(!fecha %in% fechas_tiempo0) %>% 
+  group_by(fecha) %>% 
+  summarise(tq = sum(tiempo_quirurgico)) %>% 
+  arrange(fecha) %>%
+  ggplot(aes(x=fecha, y=tq)) +
+  geom_point()+
+  geom_smooth()+
+  labs(y="Minutos")
+
+
+```
+
+### Tiempo de Finalización (JM)
+
+
+```{r}
+
+data %>% filter(anul==FALSE & tipo_int != "URGENTE" & prolong2 != TRUE) %>% 
+  group_by(fecha, h_15) %>% summarise(h_fin_max = max(h_fin)) %>%
+  mutate(dif = as.numeric(difftime(h_fin_max, h_15, units = "mins"))) %>%
+  ggplot(aes(x=fecha, y=dif))+
+  geom_smooth()+
+  geom_hline(yintercept = 0, colour = "red")+
+  geom_point()+
+  labs(y="Minutos\n", x="\nFecha", caption = "Valores positivos representan tiempo transcurrido después de las 15:00h.")
+
+```
+
+
+
+## Cancelaciones / Mes
+
+```{r}
+
+
+data %>% filter(anul == TRUE) %>% count(Mes = month(fecha)) %>% 
+  ggplot(aes(x= factor(Mes), y = n)) +
+  geom_col(fill="steelblue", width = 0.7)+
+  geom_label(aes(label=n))+
+  theme_replace() +
+  labs(x = "\nMes", y="Cancelaciones\n")
+
+
+```
+
+## Hora de Cancelación
+
+```{r}
+
+data %>% filter(anul == TRUE) %>% 
+  mutate(h_ini_hm = format(h_ini, format = "%H:%M")) %>%
+  ggplot(aes(x=fecha, y= h_ini_hm))+
+  geom_point(color = "steelblue", size=2)+
+  theme_replace()+
+  labs(y = "Cancelación Hora:Minutos\n", x="\nFecha")
+
+
+```
+
+
+## Jornadas Continuas (JC), Prolongaciones (P) y Excesos de Jornada (EJ)
+
+
+###  Mensuales (incluida Robótica)
+
+```{r}
+
+
+p1 <- data %>% 
+  filter(prolong2 == TRUE & anul == FALSE) %>% 
+  distinct(fecha) %>% 
+  mutate(mes = month(fecha)) %>%
+  count(mes) %>%
+  ggplot(aes(x = factor(mes), y=n)) +
+  geom_col(fill="steelblue", width = 0.5) +
+  geom_label(aes(label = n))+
+  theme_replace()+
+  labs(x = "\nMes", y="Jornadas Continuas \n", caption = "Fuente: SSQQ")
+
+
+p2 <- data %>% 
+  filter(prolong == TRUE & anul == FALSE) %>% 
+  distinct(fecha) %>% 
+  mutate(mes = month(fecha)) %>%
+  count(mes) %>%
+  ggplot(aes(x = factor(mes), y=n)) +
+  geom_col(fill="orange", width = 0.5) +
+  geom_label(aes(label = n))+
+  theme_replace()+
+  labs(x = "\nMes", y="Jornadas Continuas \n", caption = "Fuente: Transcripción de Hoja Quirúrgica")
+
+
+p1 + p2
+```
+
+
+
+### Procedimientos diarios en JC, Prolongación o Exceso-Jornada 
+
+- En este gráfico se representan el número de procedimientos quirúrgicos mensuales realizados en días con o sin prolongación de jornada para cada tipo de fuente: SSQQ vs Transcripción Hoja Quirúrgica. 
+
+```{r}
+
+# data <- data %>% mutate(prolong = if_else(prolong == "S", TRUE, FALSE))
+
+fechas_prolong <- data %>% filter(prolong == TRUE) %>% pull(fecha) %>% unique()
+fechas_prolong2 <- data %>% filter(prolong2 == TRUE) %>% pull(fecha) %>% unique()
+
+n_fechas_prolong <- data %>% filter(prolong == TRUE) %>% pull(fecha) %>% unique() %>% length()
+n_fechas_prolong2 <- data %>% filter(prolong2 == TRUE) %>% pull(fecha) %>% unique() %>% length()
+
+p1 <- data %>% 
+  filter(anul == FALSE) %>% 
+  mutate(dia_jc = if_else(fecha %in% fechas_prolong2, TRUE, FALSE)) %>%
+  group_by(fecha, mes_anio = paste0(month(fecha),"-",year(fecha)), dia_jc) %>%
+  count() %>%
+  ggplot(aes(x= factor(mes_anio), y=n, fill = dia_jc))+
+  geom_col()+
+  facet_wrap(~ dia_jc, )+
+  theme(
+    axis.text.x = element_text(angle=90),
+    strip.text = element_blank(),
+    strip.background = element_blank(),
+    legend.position = "top"
+  )+
+  labs(x=NULL, y="Procedimientos\n", fill="Días con JC/P/EJ", caption="Fuente:SSQQ")
+
+p2 <- data %>% 
+  filter(anul == FALSE) %>% 
+  mutate(dia_jc = if_else(fecha %in% fechas_prolong, TRUE, FALSE)) %>%
+  group_by(fecha, mes_anio = paste0(month(fecha),"-",year(fecha)), dia_jc) %>%
+  count() %>%
+  ggplot(aes(x= factor(mes_anio), y=n, fill = dia_jc))+
+  geom_col()+
+  facet_wrap(~ dia_jc, )+
+  theme(
+    axis.text.x = element_text(angle=90),
+    strip.text = element_blank(),
+    strip.background = element_blank(),
+    legend.position = "none"
+  )+
+  labs(x=NULL, y="Procedimientos\n", caption="Fuente: Hoja Quirúrgica")
+
+
+
+
+p1 + p2 + plot_layout(ncol=1)
+
+
+```
+
+
+
+### Finalización de JC/P/EJ
+
+```{r}
+
+
+p1 <- data %>% filter(prolong2 == "TRUE" & anul == FALSE) %>% 
+  group_by(fecha) %>% 
+  summarise(max = max(h_fin)) %>%
+  mutate(h_15 = as.POSIXct(paste(fecha, "15:00"), format = "%Y-%m-%d %H:%M", tz = "UTC"),
+         dif = as.numeric(difftime(max, h_15, units = "mins")))%>%
+  filter(dif >0) %>%
+  ggplot(aes(x=fecha, y=dif)) +
+  geom_col(fill = "steelblue") +
+  geom_hline(yintercept = 0, color="red", linewidth = 1)+
+  geom_hline(yintercept = 120, color="orange", linewidth = 0.7, linetype = 2)+
+  geom_hline(yintercept = 180, color="green", linewidth = 0.7, linetype = 2)+
+  theme_replace() +
+  labs(y = "Minutos\n", x=NULL, subtitle = "Fuente:SSQQ")
+
+p2 <- data %>% filter(prolong == "TRUE" & anul == FALSE) %>% 
+  group_by(fecha) %>% 
+  summarise(max = max(h_fin)) %>%
+  mutate(h_15 = as.POSIXct(paste(fecha, "15:00"), format = "%Y-%m-%d %H:%M", tz = "UTC"),
+         dif = as.numeric(difftime(max, h_15, units = "mins")))%>%
+  filter(dif >0) %>%
+  ggplot(aes(x=fecha, y=dif)) +
+  geom_col(fill = "steelblue") +
+  geom_hline(yintercept = 0, color="red", linewidth = 1)+
+  geom_hline(yintercept = 120, color="orange", linewidth = 0.7, linetype = 2)+
+  geom_hline(yintercept = 180, color="green", linewidth = 0.7, linetype = 2)+
+  theme_replace() +
+  labs(y = "Minutos\n", x="\nFecha", caption = "Rojo 15:00h\n Naranja 17:00h\n Verde 18:00h", subtitle = "Fuente:Hoja Quirúrgica")
+
+p1 + p2 + plot_layout(ncol=1)
+  
+```
+
+
+
+## Cirugía Robótica
+
+- Creamos la variable `robot`a partir de los registros con sombreado naranja.
+
+
+```{r}
+
+data %>% group_by(Mes = month(fecha), Año = year(fecha)) %>% count(robot)  %>% filter(robot==TRUE) %>%
+  ggplot(aes(x=factor(Mes), y=n)) +
+  geom_col(fill = "steelblue") + 
+  geom_label(aes(label=n))+
+  theme_get() +
+  labs(x = "\nMes", y = "Proc. Robóticos\n", caption = "Año 2024")
+
+```
+
+
+## Cirugía Urgente
+
+
+```{r}
+
+data %>% filter(tipo_int == "URGENTE")  %>% 
+  group_by(Mes = month(fecha), Año = year(fecha)) %>% summarise(n=n()) %>%
+  ggplot(aes(x = as.factor(Mes), y = n )) +
+  geom_col(fill = "steelblue") + 
+  theme_replace() +
+  labs(x = "\nMes", y = "Proced. Urgentes\n", caption = "Año 2024")
+
+
+```
+
+
+## Tiempo Quirúrgico Standard (Lobectomía)
+
+```{r}
+
+data %>%
+  filter(lobectomia == TRUE) %>% 
+  group_by(Mes = month(fecha)) %>%
+  summarise(
+    mean = round(mean(tiempo_quirurgico, na.rm = TRUE),0),
+    median = round(quantile(tiempo_quirurgico,probs = 0.5, na.rm = TRUE),0),
+    p40 = quantile(tiempo_quirurgico, probs = 0.4, na.rm=TRUE),
+    p60 = quantile(tiempo_quirurgico, probs = 0.6, na.rm=TRUE)
+  ) %>% DT::datatable()
+
+```
+
+```{r}
+
+data %>%
+  filter(lobectomia == TRUE) %>% 
+  ggplot(aes(x=fecha, y=tiempo_quirurgico, group=month(fecha)))+
+  geom_boxplot(fill="steelblue")+
+  theme_replace()+
+  labs(x="\nFecha", y="Tiempo Quirúrgico\n")
+
+
+```
+
+

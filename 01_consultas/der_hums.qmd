@@ -1,0 +1,100 @@
+---
+title: "Dermatología"
+subtitle: "HUMS"
+params:
+  codigo: "DER_HUMS"
+---
+
+```{r}
+library(tidyverse)
+
+```
+
+
+
+```{r}
+
+data <- read_csv(file = "ALL_consultas.csv") %>% filter(codigo == params$codigo)
+```
+
+<br>
+
+## Total Consultas
+
+```{r}
+
+data %>% group_by(Mes, Anio) %>% count() %>%
+  mutate(Mes_Anio = factor(paste0(Anio,"/", Mes))) %>%
+  ggplot(aes(x=factor(Mes), y=n, group = factor(Anio))) +
+  geom_col(aes(fill=factor(Anio)))+
+  theme(
+    axis.text.x = element_text(angle=90, size=6),
+    legend.position = "none"
+    )+
+  labs(x="\nMes", y="Total Visitas\n")+
+  facet_wrap(~Anio, nrow = 1)
+
+```
+
+<br>
+
+## Primeras Visitas
+
+
+```{r}
+
+
+data %>% filter(Prestación == "PRIMERAS VISITAS") %>%
+  group_by(Mes, Anio) %>% count() %>%
+  mutate(Mes_Anio = factor(paste0(Anio,"/", Mes))) %>%
+  ggplot(aes(x=factor(Mes), y=n, group = factor(Anio))) +
+  geom_line(aes(color=factor(Anio)), size=1)+
+  geom_label(aes(label=n), size=2)+
+  theme(
+    axis.text.x = element_text(angle=90, size=7),
+    legend.position = "none"
+    )+
+  labs(x="\nMes", y="Primeras Visitas\n")+
+  facet_wrap(~Anio, nrow = 1)
+
+```
+
+
+<br>
+
+## Primeras vs Segundas Visitas
+
+```{r}
+
+data %>% group_by(Mes, Anio, Prestación) %>% count() %>% 
+  group_by(Mes, Anio) %>% 
+  mutate(Percent = round(100*n/sum(n), 0)) %>%
+  filter(Prestación %in% c("PRIMERAS VISITAS", "REVISIONES")) %>%
+  ggplot(aes(x=factor(Mes), y=n, group = factor(Anio))) +
+  geom_col(aes(fill=factor(Prestación)))+
+  geom_label(aes(label = if_else(Prestación == "PRIMERAS VISITAS",Percent, NA)), size = 2)+
+  theme(
+    axis.text.x = element_text(angle=90, size=7),
+    legend.position = "none"
+    )+
+  labs(x="\nMes", y="Primeras vs Segundas Visitas\n", caption = "Las etiquetas indican el porcentaje de primeras visitas para cada mes")+
+  facet_wrap(~Anio, nrow = 2)
+
+```
+
+
+```{r}
+
+assign(
+
+  x = paste0(params$codigo, "_pv"),
+
+  data %>%
+  filter(Prestación == "PRIMERAS VISITAS") %>%
+  group_by(Anio, Mes) %>% count(name = "primeras_visitas")
+)
+
+
+```
+
+

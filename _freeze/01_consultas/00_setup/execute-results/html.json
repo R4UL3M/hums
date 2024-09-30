@@ -1,0 +1,14 @@
+{
+  "hash": "55a180dba23524d5dd9adabac3fce3b8",
+  "result": {
+    "markdown": "---\ntitle: \"Consultas Externas\"\nsubtitle: \"Lectura y Unión de Registros\"\n---\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
