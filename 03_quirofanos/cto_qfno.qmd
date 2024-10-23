@@ -1,7 +1,7 @@
 ---
 title: "Cirugía Torácica"
 params:
-  data: "cto"
+  servicio: "CIR TORACICA"
 ---
 
 
@@ -25,8 +25,7 @@ library(patchwork)
 
 ```{r}
 
-data <- readxl::read_excel(paste0(params$data, "/data2.xls"), skip = 5) %>% janitor::clean_names() %>%
-  select(-c("nhc", "cia"))
+data <- ALL_qfnos %>% filter(servicio == params$servicio)
 
 data %>% head(5) %>% DT::datatable(options = list(
   initComplete = JS(

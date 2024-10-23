@@ -1,9 +1,0 @@
----
-title: "Quirófanos"
----
-Quirófanos
-
-```{r}
-
-```
-

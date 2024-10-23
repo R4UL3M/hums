@@ -1,80 +1,10 @@
 [
   {
-    "objectID": "sesiones/sesiones.html",
-    "href": "sesiones/sesiones.html",
-    "title": "Sesiones Quirúrgicas",
+    "objectID": "nosotros/nosotros.html",
+    "href": "nosotros/nosotros.html",
+    "title": "¿Quiénes Somos?",
     "section": "",
-    "text": "Sesiones Quirúrgicas"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html",
-    "title": "Cirugía Torácica",
-    "section": "",
-    "text": "Codelibrary(tidyverse)\nlibrary(readxl)\nlibrary(janitor)\nlibrary(openxlsx)\nlibrary(DT)\nlibrary(gt)"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#importación-y-depuración-de-datos",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#importación-y-depuración-de-datos",
-    "title": "Cirugía Torácica",
-    "section": "\n1 Importación y Depuración de Datos",
-    "text": "1 Importación y Depuración de Datos\n\nCodecto &lt;- readxl::read_excel(\"cirugia_toracica.xls\", skip = 5) %&gt;% janitor::clean_names() %&gt;%\n  select(-c(\"nhc\", \"cia\"))\n\ncto %&gt;% head(5) %&gt;% DT::datatable(options = list(\n  initComplete = JS(\n    \"function(settings, json) {\",\n    \"$('table').css({'font-size': '12px'});\",\n    \"}\"\n  )\n))\n\n\n\n\n\n\n\n\nfecha: modificación del tipo de dato para manejarlo como una fecha.\n\nh_ini (hora de inicio de la cirugía concatenación fecha y h_ini\n\n\nh_fin (hora de fianlización de la cirugía): concatenación fecha y h_fin\n\n\nh_15: creramos esta variable que representa las 15:00 horas del día que indica la variable fecha\n\n\ntiempo_quirurgico (minutos): variable de nueva creación resultado de h_fin - h_ini\n\n\nfin_posterior_15(TRUE vs FALSE): variable de nueva creación. TRUE si la cirugía termina después de las 15:00 horas.\n\n\nCodecto$fecha &lt;- as.Date(cto$fecha, format = \"%d/%m/%Y\") \n\ncto$h_ini &lt;- as.POSIXct(paste(cto$fecha, cto$h_ini), format = \"%Y-%m-%d %H:%M\", tz = \"UTC\")\n\ncto$h_fin &lt;- as.POSIXct(paste(cto$fecha, cto$h_fin), format = \"%Y-%m-%d %H:%M\", tz = \"UTC\") \n\ncto$h_15 &lt;- as.POSIXct(paste(cto$fecha, \"15:00\"), format = \"%Y-%m-%d %H:%M\", tz = \"UTC\")\n\ncto &lt;- cto %&gt;% mutate(tiempo_quirurgico = difftime(h_fin, h_ini, units = \"mins\"),\n                      fin_posterior_15 = format(cto$h_fin, \"%H:%M:%S\") &gt; \"15:00:00\")\n\n\n\ncto %&gt;% \n  select(fecha, h_ini, h_fin, h_15, tiempo_quirurgico, fin_posterior_15) %&gt;% \n  arrange(fecha) %&gt;%\n  head(5) %&gt;%\n  DT::datatable(options = list(\n  initComplete = JS(\n    \"function(settings, json) {\",\n    \"$('table').css({'font-size': '14px'});\",\n    \"}\"\n  )\n)) \n\n\n\n\n\n\n\nConversion de la variable anul a variable tipo lógico (TRUE vs FALSE)\n\n\nCodecto &lt;- cto %&gt;% mutate(anul = if_else(is.na(anul), FALSE, TRUE))\n\n\n\nCreación de la variable lobectomia como procedimiento mayor más representativo que se utilizará para el cálculo del tiempo quirúrgico estandard en procedimientos mayores. En la creación de dicha variable se ha utilizado la siguiente expresión regular:\n\n\nCodecto$lobectomia &lt;- grepl(\"LOBECTOMIA|LSD|LM|LID|LII|LSI\", cto$procedimientos, ignore.case = TRUE) & \n                 !grepl(\"ATIPICA|CUÑA|RA\", cto$procedimientos, ignore.case = TRUE)\n\ncto %&gt;% select(procedimientos, lobectomia) %&gt;% \n  DT::datatable(options = list(\n  initComplete = JS(\n    \"function(settings, json) {\",\n    \"$('table').css({'font-size': '14px'});\",\n    \"}\"\n  )\n))\n\n\n\n\n\n\n\nCreación de la variable cirujano representando el cirujano principal del procedimiento.\n\n\nCodecto$cirujano_pral &lt;- sub(\"\\\\s*\\\\(Pral\\\\).*\", \"\", cto$cirujanos)\n\ncto %&gt;% select(cirujanos, cirujano_pral) %&gt;% head(5) %&gt;% DT::datatable()"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#procedimientos-mensuales",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#procedimientos-mensuales",
-    "title": "Cirugía Torácica",
-    "section": "\n2 Procedimientos Mensuales",
-    "text": "2 Procedimientos Mensuales\n\nCodecto %&gt;% filter(anul == FALSE) %&gt;% count(Mes = month(fecha)) %&gt;% \n  ggplot(aes(x= factor(Mes), y = n)) +\n  geom_col(fill=\"steelblue\", width = 0.7)+\n  geom_label(aes(label=n))+\n  theme_replace() +\n  labs(x = \"\\nMes\", y=\"Procedimientos\\n\")"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#jornadas-de-mañana-jm",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#jornadas-de-mañana-jm",
-    "title": "Cirugía Torácica",
-    "section": "\n3 Jornadas de Mañana (JM)",
-    "text": "3 Jornadas de Mañana (JM)\n\n3.1 Tiempo Quirúrgico Útil JM\n\nCodecto %&gt;% filter(anul==FALSE & tipo_int != \"URGENTE\" & tiempo_quirurgico &gt;0 & prolong2 ==FALSE) %&gt;% \n  group_by(fecha) %&gt;% \n  summarise(tq = sum(tiempo_quirurgico)) %&gt;% \n  arrange(fecha) %&gt;%\n  ggplot(aes(x=fecha, y=tq)) +\n  geom_point()+\n  geom_smooth()+\n  labs(y=\"Minutos\")\n\n\n\n\n\n3.2 Tiempo de Finalización (JM)\n\nCodecto %&gt;% filter(anul==FALSE & tipo_int != \"URGENTE\" & prolong2 != TRUE) %&gt;% \n  group_by(fecha, h_15) %&gt;% summarise(h_fin_max = max(h_fin)) %&gt;%\n  mutate(dif = as.numeric(difftime(h_fin_max, h_15, units = \"mins\"))) %&gt;%\n  ggplot(aes(x=fecha, y=dif))+\n  geom_smooth()+\n  geom_hline(yintercept = 0, colour = \"red\")+\n  geom_point()+\n  labs(y=\"Minutos\\n\", x=\"\\nFecha\", caption = \"Valores positivos representan tiempo transcurrido después de las 15:00h.\")"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#cancelaciones",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#cancelaciones",
-    "title": "Cirugía Torácica",
-    "section": "\n4 Cancelaciones",
-    "text": "4 Cancelaciones\n\nCodecto %&gt;% filter(anul == TRUE) %&gt;% count(Mes = month(fecha)) %&gt;% \n  ggplot(aes(x= factor(Mes), y = n)) +\n  geom_col(fill=\"steelblue\", width = 0.7)+\n  geom_label(aes(label=n))+\n  theme_replace() +\n  labs(x = \"\\nMes\", y=\"Cancelaciones\\n\")"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#hora-cancelación",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#hora-cancelación",
-    "title": "Cirugía Torácica",
-    "section": "\n5 Hora Cancelación",
-    "text": "5 Hora Cancelación\n\nCodecto %&gt;% filter(anul == TRUE) %&gt;% \n  mutate(h_ini_hm = format(h_ini, format = \"%H:%M\")) %&gt;%\n  ggplot(aes(x=fecha, y= h_ini_hm))+\n  geom_point(color = \"steelblue\", size=2)+\n  theme_replace()+\n  labs(y = \"Cancelación Hora:Minutos\\n\", x=\"\\nFecha\")"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#jornadas-continuas-jc",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#jornadas-continuas-jc",
-    "title": "Cirugía Torácica",
-    "section": "\n6 Jornadas Continuas (JC)",
-    "text": "6 Jornadas Continuas (JC)\n\nCreación de la variable prolong2 que toma el valor TRUE para registros sombreados en amarillo y FALSE en caso contrario. El campo prolong2 = TRUE indica procedimientos que forman parte de una jornada continuada.\n\n\n6.1 Jornadas Continuas Mensuales (incluida Robótica)\n\nCodecto %&gt;% filter(prolong2 == \"TRUE\" & anul == FALSE) %&gt;% \n  distinct(fecha) %&gt;% \n  mutate(mes = month(fecha)) %&gt;%\n  count(mes) %&gt;%\n  ggplot(aes(x = factor(mes), y=n)) +\n  geom_col(fill=\"steelblue\", width = 0.5) +\n  geom_label(aes(label = n))+\n  theme_replace()+\n  labs(x = \"\\nMes\", y=\"Jornadas Continuas \\n\")\n\n\n\n\n\n6.2 Procedimientos en Jornada Continua\n\nCodecto &lt;- cto %&gt;% mutate(prolong = if_else(prolong == \"S\", TRUE, FALSE))\n\ncto %&gt;% filter(anul == FALSE) %&gt;% count(`Procedimientos JC`=  prolong2) %&gt;% mutate(`%` = round(100*n/sum(n))) %&gt;%\n  DT::datatable()\n\n\n\n\n\n\n\n6.3 Finalización de Jornadas Continuas\n\nCodecto %&gt;% filter(prolong2 == \"TRUE\" & anul == FALSE) %&gt;% \n  group_by(fecha) %&gt;% \n  summarise(max = max(h_fin)) %&gt;%\n  mutate(h_15 = as.POSIXct(paste(fecha, \"15:00\"), format = \"%Y-%m-%d %H:%M\", tz = \"UTC\"),\n         dif = as.numeric(difftime(max, h_15, units = \"mins\")))%&gt;%\n  filter(dif &gt;0) %&gt;%\n  ggplot(aes(x=fecha, y=dif)) +\n  geom_col(fill = \"steelblue\") +\n  geom_hline(yintercept = 0, color=\"red\", linewidth = 1)+\n  geom_hline(yintercept = 120, color=\"orange\", linewidth = 0.7, linetype = 2)+\n  geom_hline(yintercept = 180, color=\"green\", linewidth = 0.7, linetype = 2)+\n  theme_replace() +\n  labs(y = \"Minutos\\n\", x=\"\\nFecha\", caption = \"Rojo 15:00h\\n Naranja 17:00h\\n Verde 18:00h\")"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#cirugía-robótica",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#cirugía-robótica",
-    "title": "Cirugía Torácica",
-    "section": "\n7 Cirugía Robótica",
-    "text": "7 Cirugía Robótica\n\nCreamos la variable robota partir de los registros con sombreado naranja.\n\n\nCodecto %&gt;% group_by(Mes = month(fecha), Año = year(fecha)) %&gt;% count(robot)  %&gt;% filter(robot==TRUE) %&gt;%\n  ggplot(aes(x=factor(Mes), y=n)) +\n  geom_col(fill = \"steelblue\") + \n  geom_label(aes(label=n))+\n  theme_get() +\n  labs(x = \"\\nMes\", y = \"Proc. Robóticos\\n\", caption = \"Año 2024\")"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#cirugía-urgente",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#cirugía-urgente",
-    "title": "Cirugía Torácica",
-    "section": "\n8 Cirugía Urgente",
-    "text": "8 Cirugía Urgente\n\nCodecto %&gt;% filter(tipo_int == \"URGENTE\")  %&gt;% \n  group_by(Mes = month(fecha), Año = year(fecha)) %&gt;% summarise(n=n()) %&gt;%\n  ggplot(aes(x = as.factor(Mes), y = n )) +\n  geom_col(fill = \"steelblue\") + \n  theme_replace() +\n  labs(x = \"\\nMes\", y = \"Proced. Urgentes\\n\", caption = \"Año 2024\")"
-  },
-  {
-    "objectID": "informes/cirugia_toracica/test/cirugia_toracica.html#tiempo-quirúrgico-standard-lobectomía",
-    "href": "informes/cirugia_toracica/test/cirugia_toracica.html#tiempo-quirúrgico-standard-lobectomía",
-    "title": "Cirugía Torácica",
-    "section": "\n9 Tiempo Quirúrgico Standard (Lobectomía)",
-    "text": "9 Tiempo Quirúrgico Standard (Lobectomía)\n\nCodecto %&gt;%\n  filter(lobectomia == TRUE) %&gt;% \n  group_by(Mes = month(fecha)) %&gt;%\n  summarise(\n    mean = round(mean(tiempo_quirurgico, na.rm = TRUE),0),\n    median = round(quantile(tiempo_quirurgico,probs = 0.5, na.rm = TRUE),0),\n    p40 = quantile(tiempo_quirurgico, probs = 0.4, na.rm=TRUE),\n    p60 = quantile(tiempo_quirurgico, probs = 0.6, na.rm=TRUE)\n  ) %&gt;% DT::datatable()\n\n\n\n\n\n\n\nCodecto %&gt;%\n  filter(lobectomia == TRUE) %&gt;% \n  ggplot(aes(x=fecha, y=tiempo_quirurgico, group=month(fecha)))+\n  geom_boxplot(fill=\"steelblue\")+\n  theme_replace()+\n  labs(x=\"\\nFecha\", y=\"Tiempo Quirúrgico\\n\")"
+    "text": "Dra María Blanca Villarroya Izquierdo (Subdirectora de Servicios Quirúrgicos)\nDª Patricia Lite (Subdirectora de Gestión Económica).\nDª Paloma Martínez (Subdirectora de Gestión y Sistemas Información)\nDª Dolores Zapatero González (Coordinadora de Admisión)\nDr Antonio Martínez Germán (Coordinador del Bloque Quirúrgico)\nDª Pilar García Gil (Jefe de Servicio de Informática)\nDª Cristina Peña Olle (Jefa de Servicio de Control de Gestión)\nDr Javier Martínez Andreu (Jefe Servicio de Anestesiología y Reanimación)\nDª Marisol Gracia Orer (Jefa de Sección del Comité de Programación Quirúrgica)\nDª Silvia Elisa Agon Sarmiento (Jefa de Grupo G.S)\nDª Blanca Gerona Iñiguez (Servicio de Informática)\nDr Raúl Embún Flor (FEA Servicio de Cirugía Torácica)"
   },
   {
     "objectID": "apps/apps.html",
@@ -84,207 +14,46 @@
     "text": "Aplicaciones"
   },
   {
-    "objectID": "02_rdq/cto_rdq.html",
-    "href": "02_rdq/cto_rdq.html",
-    "title": "",
+    "objectID": "03_quirofanos/quirofanos.html",
+    "href": "03_quirofanos/quirofanos.html",
+    "title": "Quirófanos",
     "section": "",
-    "text": "Code"
+    "text": "Quirófanos"
   },
   {
-    "objectID": "02_rdq/cto_rdq.html#datos-primeras-visitas-y-rdq",
-    "href": "02_rdq/cto_rdq.html#datos-primeras-visitas-y-rdq",
-    "title": "",
-    "section": "\n1 Datos: Primeras Visitas y RDQ",
-    "text": "1 Datos: Primeras Visitas y RDQ"
-  },
-  {
-    "objectID": "02_rdq/cto_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
-    "href": "02_rdq/cto_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
-    "title": "",
+    "objectID": "02_rdq/tra_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "href": "02_rdq/tra_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "title": "Traumatología",
     "section": "\n2 Primeras Visitas vs Total Entradas en RDQ",
     "text": "2 Primeras Visitas vs Total Entradas en RDQ"
   },
   {
-    "objectID": "02_rdq/cto_rdq.html#total-entradas-vs-salidas",
-    "href": "02_rdq/cto_rdq.html#total-entradas-vs-salidas",
-    "title": "",
+    "objectID": "02_rdq/tra_rdq.html#total-entradas-vs-salidas",
+    "href": "02_rdq/tra_rdq.html#total-entradas-vs-salidas",
+    "title": "Traumatología",
     "section": "\n3 Total Entradas vs Salidas",
     "text": "3 Total Entradas vs Salidas\n\n\n\n\n\n\n\n3.1 Salidas según Tipo de Jornada\n\n\n\n\n\n\n3.2 Salidas según Tipo de Cirugía"
   },
   {
-    "objectID": "02_rdq/cto_rdq.html#activos-en-espera-todos",
-    "href": "02_rdq/cto_rdq.html#activos-en-espera-todos",
-    "title": "",
+    "objectID": "02_rdq/tra_rdq.html#activos-en-espera-todos",
+    "href": "02_rdq/tra_rdq.html#activos-en-espera-todos",
+    "title": "Traumatología",
     "section": "\n4 Activos en Espera (Todos)",
     "text": "4 Activos en Espera (Todos)"
   },
   {
-    "objectID": "02_rdq/cto_rdq.html#activos-en-espera-críticos",
-    "href": "02_rdq/cto_rdq.html#activos-en-espera-críticos",
-    "title": "",
+    "objectID": "02_rdq/tra_rdq.html#activos-en-espera-críticos",
+    "href": "02_rdq/tra_rdq.html#activos-en-espera-críticos",
+    "title": "Traumatología",
     "section": "\n5 Activos en Espera (Críticos)",
     "text": "5 Activos en Espera (Críticos)"
   },
   {
-    "objectID": "02_rdq/cto_rdq.html#demora-media",
-    "href": "02_rdq/cto_rdq.html#demora-media",
-    "title": "",
+    "objectID": "02_rdq/tra_rdq.html#demora-media",
+    "href": "02_rdq/tra_rdq.html#demora-media",
+    "title": "Traumatología",
     "section": "\n6 Demora Media",
     "text": "6 Demora Media"
-  },
-  {
-    "objectID": "02_rdq/00_rdq.html",
-    "href": "02_rdq/00_rdq.html",
-    "title": "Registro de Demanda Quirúrgica",
-    "section": "",
-    "text": "RDQ"
-  },
-  {
-    "objectID": "01_consultas/tra_fracturas_ccee.html#total-consultas",
-    "href": "01_consultas/tra_fracturas_ccee.html#total-consultas",
-    "title": "Traumatología",
-    "section": "\n1 Total Consultas",
-    "text": "1 Total Consultas"
-  },
-  {
-    "objectID": "01_consultas/tra_fracturas_ccee.html#primeras-visitas",
-    "href": "01_consultas/tra_fracturas_ccee.html#primeras-visitas",
-    "title": "Traumatología",
-    "section": "\n2 Primeras Visitas",
-    "text": "2 Primeras Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_fracturas_ccee.html#primeras-vs-segundas-visitas",
-    "href": "01_consultas/tra_fracturas_ccee.html#primeras-vs-segundas-visitas",
-    "title": "Traumatología",
-    "section": "\n3 Primeras vs Segundas Visitas",
-    "text": "3 Primeras vs Segundas Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_ccee.html#total-consultas",
-    "href": "01_consultas/tra_ccee.html#total-consultas",
-    "title": "Traumatología",
-    "section": "\n1 Total Consultas",
-    "text": "1 Total Consultas"
-  },
-  {
-    "objectID": "01_consultas/tra_ccee.html#primeras-visitas",
-    "href": "01_consultas/tra_ccee.html#primeras-visitas",
-    "title": "Traumatología",
-    "section": "\n2 Primeras Visitas",
-    "text": "2 Primeras Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_ccee.html#primeras-vs-segundas-visitas",
-    "href": "01_consultas/tra_ccee.html#primeras-vs-segundas-visitas",
-    "title": "Traumatología",
-    "section": "\n3 Primeras vs Segundas Visitas",
-    "text": "3 Primeras vs Segundas Visitas"
-  },
-  {
-    "objectID": "01_consultas/der_hums.html#total-consultas",
-    "href": "01_consultas/der_hums.html#total-consultas",
-    "title": "Dermatología",
-    "section": "\n1 Total Consultas",
-    "text": "1 Total Consultas"
-  },
-  {
-    "objectID": "01_consultas/der_hums.html#primeras-visitas",
-    "href": "01_consultas/der_hums.html#primeras-visitas",
-    "title": "Dermatología",
-    "section": "\n2 Primeras Visitas",
-    "text": "2 Primeras Visitas"
-  },
-  {
-    "objectID": "01_consultas/der_hums.html#primeras-vs-segundas-visitas",
-    "href": "01_consultas/der_hums.html#primeras-vs-segundas-visitas",
-    "title": "Dermatología",
-    "section": "\n3 Primeras vs Segundas Visitas",
-    "text": "3 Primeras vs Segundas Visitas"
-  },
-  {
-    "objectID": "01_consultas/cto_ccee.html#total-consultas",
-    "href": "01_consultas/cto_ccee.html#total-consultas",
-    "title": "Cirugía Torácica",
-    "section": "\n1 Total Consultas",
-    "text": "1 Total Consultas"
-  },
-  {
-    "objectID": "01_consultas/cto_ccee.html#primeras-visitas",
-    "href": "01_consultas/cto_ccee.html#primeras-visitas",
-    "title": "Cirugía Torácica",
-    "section": "\n2 Primeras Visitas",
-    "text": "2 Primeras Visitas"
-  },
-  {
-    "objectID": "01_consultas/cto_ccee.html#primeras-vs-segundas-visitas",
-    "href": "01_consultas/cto_ccee.html#primeras-vs-segundas-visitas",
-    "title": "Cirugía Torácica",
-    "section": "\n3 Primeras vs Segundas Visitas",
-    "text": "3 Primeras vs Segundas Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_cadera_ccee.html#total-consultas",
-    "href": "01_consultas/tra_cadera_ccee.html#total-consultas",
-    "title": "Traumatología",
-    "section": "\n1 Total Consultas",
-    "text": "1 Total Consultas"
-  },
-  {
-    "objectID": "01_consultas/tra_cadera_ccee.html#primeras-visitas",
-    "href": "01_consultas/tra_cadera_ccee.html#primeras-visitas",
-    "title": "Traumatología",
-    "section": "\n2 Primeras Visitas",
-    "text": "2 Primeras Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_cadera_ccee.html#primeras-vs-segundas-visitas",
-    "href": "01_consultas/tra_cadera_ccee.html#primeras-vs-segundas-visitas",
-    "title": "Traumatología",
-    "section": "\n3 Primeras vs Segundas Visitas",
-    "text": "3 Primeras vs Segundas Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_columna_ccee.html#total-consultas",
-    "href": "01_consultas/tra_columna_ccee.html#total-consultas",
-    "title": "Traumatología",
-    "section": "\n1 Total Consultas",
-    "text": "1 Total Consultas"
-  },
-  {
-    "objectID": "01_consultas/tra_columna_ccee.html#primeras-visitas",
-    "href": "01_consultas/tra_columna_ccee.html#primeras-visitas",
-    "title": "Traumatología",
-    "section": "\n2 Primeras Visitas",
-    "text": "2 Primeras Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_columna_ccee.html#primeras-vs-segundas-visitas",
-    "href": "01_consultas/tra_columna_ccee.html#primeras-vs-segundas-visitas",
-    "title": "Traumatología",
-    "section": "\n3 Primeras vs Segundas Visitas",
-    "text": "3 Primeras vs Segundas Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_rodilla_ccee.html#total-consultas",
-    "href": "01_consultas/tra_rodilla_ccee.html#total-consultas",
-    "title": "Traumatología",
-    "section": "\n1 Total Consultas",
-    "text": "1 Total Consultas"
-  },
-  {
-    "objectID": "01_consultas/tra_rodilla_ccee.html#primeras-visitas",
-    "href": "01_consultas/tra_rodilla_ccee.html#primeras-visitas",
-    "title": "Traumatología",
-    "section": "\n2 Primeras Visitas",
-    "text": "2 Primeras Visitas"
-  },
-  {
-    "objectID": "01_consultas/tra_rodilla_ccee.html#primeras-vs-segundas-visitas",
-    "href": "01_consultas/tra_rodilla_ccee.html#primeras-vs-segundas-visitas",
-    "title": "Traumatología",
-    "section": "\n3 Primeras vs Segundas Visitas",
-    "text": "3 Primeras vs Segundas Visitas"
   },
   {
     "objectID": "02_rdq/01_comparacion_servicios_rdq.html",
@@ -343,67 +112,249 @@
     "text": "7 Demora Media"
   },
   {
-    "objectID": "02_rdq/tra_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
-    "href": "02_rdq/tra_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "objectID": "01_consultas/tra_rodilla_ccee.html#total-consultas",
+    "href": "01_consultas/tra_rodilla_ccee.html#total-consultas",
     "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_rodilla_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_rodilla_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_rodilla_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_rodilla_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_columna_ccee.html#total-consultas",
+    "href": "01_consultas/tra_columna_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_columna_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_columna_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_columna_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_columna_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_cadera_ccee.html#total-consultas",
+    "href": "01_consultas/tra_cadera_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_cadera_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_cadera_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_cadera_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_cadera_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/der_ryc.html#total-consultas",
+    "href": "01_consultas/der_ryc.html#total-consultas",
+    "title": "Dermatología CME Ramón y Cajal",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/der_ryc.html#primeras-visitas",
+    "href": "01_consultas/der_ryc.html#primeras-visitas",
+    "title": "Dermatología CME Ramón y Cajal",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/der_ryc.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/der_ryc.html#primeras-vs-segundas-visitas",
+    "title": "Dermatología CME Ramón y Cajal",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/cto_ccee.html#total-consultas",
+    "href": "01_consultas/cto_ccee.html#total-consultas",
+    "title": "Cirugía Torácica",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/cto_ccee.html#primeras-visitas",
+    "href": "01_consultas/cto_ccee.html#primeras-visitas",
+    "title": "Cirugía Torácica",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/cto_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/cto_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Cirugía Torácica",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/der_hums.html#total-consultas",
+    "href": "01_consultas/der_hums.html#total-consultas",
+    "title": "Dermatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/der_hums.html#primeras-visitas",
+    "href": "01_consultas/der_hums.html#primeras-visitas",
+    "title": "Dermatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/der_hums.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/der_hums.html#primeras-vs-segundas-visitas",
+    "title": "Dermatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/der_sj.html#total-consultas",
+    "href": "01_consultas/der_sj.html#total-consultas",
+    "title": "Dermatología CME San José",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/der_sj.html#primeras-visitas",
+    "href": "01_consultas/der_sj.html#primeras-visitas",
+    "title": "Dermatología CME San José",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/der_sj.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/der_sj.html#primeras-vs-segundas-visitas",
+    "title": "Dermatología CME San José",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_ccee.html#total-consultas",
+    "href": "01_consultas/tra_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_fracturas_ccee.html#total-consultas",
+    "href": "01_consultas/tra_fracturas_ccee.html#total-consultas",
+    "title": "Traumatología",
+    "section": "\n1 Total Consultas",
+    "text": "1 Total Consultas"
+  },
+  {
+    "objectID": "01_consultas/tra_fracturas_ccee.html#primeras-visitas",
+    "href": "01_consultas/tra_fracturas_ccee.html#primeras-visitas",
+    "title": "Traumatología",
+    "section": "\n2 Primeras Visitas",
+    "text": "2 Primeras Visitas"
+  },
+  {
+    "objectID": "01_consultas/tra_fracturas_ccee.html#primeras-vs-segundas-visitas",
+    "href": "01_consultas/tra_fracturas_ccee.html#primeras-vs-segundas-visitas",
+    "title": "Traumatología",
+    "section": "\n3 Primeras vs Segundas Visitas",
+    "text": "3 Primeras vs Segundas Visitas"
+  },
+  {
+    "objectID": "02_rdq/00_rdq.html",
+    "href": "02_rdq/00_rdq.html",
+    "title": "Registro de Demanda Quirúrgica",
+    "section": "",
+    "text": "RDQ"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html",
+    "href": "02_rdq/cto_rdq.html",
+    "title": "",
+    "section": "",
+    "text": "Code"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html#datos-primeras-visitas-y-rdq",
+    "href": "02_rdq/cto_rdq.html#datos-primeras-visitas-y-rdq",
+    "title": "",
+    "section": "\n1 Datos: Primeras Visitas y RDQ",
+    "text": "1 Datos: Primeras Visitas y RDQ"
+  },
+  {
+    "objectID": "02_rdq/cto_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "href": "02_rdq/cto_rdq.html#primeras-visitas-vs-total-entradas-en-rdq",
+    "title": "",
     "section": "\n2 Primeras Visitas vs Total Entradas en RDQ",
     "text": "2 Primeras Visitas vs Total Entradas en RDQ"
   },
   {
-    "objectID": "02_rdq/tra_rdq.html#total-entradas-vs-salidas",
-    "href": "02_rdq/tra_rdq.html#total-entradas-vs-salidas",
-    "title": "Traumatología",
+    "objectID": "02_rdq/cto_rdq.html#total-entradas-vs-salidas",
+    "href": "02_rdq/cto_rdq.html#total-entradas-vs-salidas",
+    "title": "",
     "section": "\n3 Total Entradas vs Salidas",
     "text": "3 Total Entradas vs Salidas\n\n\n\n\n\n\n\n3.1 Salidas según Tipo de Jornada\n\n\n\n\n\n\n3.2 Salidas según Tipo de Cirugía"
   },
   {
-    "objectID": "02_rdq/tra_rdq.html#activos-en-espera-todos",
-    "href": "02_rdq/tra_rdq.html#activos-en-espera-todos",
-    "title": "Traumatología",
+    "objectID": "02_rdq/cto_rdq.html#activos-en-espera-todos",
+    "href": "02_rdq/cto_rdq.html#activos-en-espera-todos",
+    "title": "",
     "section": "\n4 Activos en Espera (Todos)",
     "text": "4 Activos en Espera (Todos)"
   },
   {
-    "objectID": "02_rdq/tra_rdq.html#activos-en-espera-críticos",
-    "href": "02_rdq/tra_rdq.html#activos-en-espera-críticos",
-    "title": "Traumatología",
+    "objectID": "02_rdq/cto_rdq.html#activos-en-espera-críticos",
+    "href": "02_rdq/cto_rdq.html#activos-en-espera-críticos",
+    "title": "",
     "section": "\n5 Activos en Espera (Críticos)",
     "text": "5 Activos en Espera (Críticos)"
   },
   {
-    "objectID": "02_rdq/tra_rdq.html#demora-media",
-    "href": "02_rdq/tra_rdq.html#demora-media",
-    "title": "Traumatología",
+    "objectID": "02_rdq/cto_rdq.html#demora-media",
+    "href": "02_rdq/cto_rdq.html#demora-media",
+    "title": "",
     "section": "\n6 Demora Media",
     "text": "6 Demora Media"
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Gestión de Área Quirúrgica",
-    "section": "",
-    "text": "Optimizar la Lista de Espera Quirúrgica (LEQ) del HUMS.\nObtener un mejor control y gestión más eficiente del Área Quirúrgica del HUMS.\n\n\n\n\n\nRecopilar, organizar, visualizar y comprender de forma rápida y eficaz toda la información relacionada con el flujo administrativo de la actividad quirúrgica del HUMS.\nAutomatizar la generación de informes que aporten valor en línea con los objetivos del Grupo de Trabajo.\nGenerar herramientas interactivas que ayuden a predecir la evolución natural de los indicadores de calidad que se establezcan y el impacto que sobre ellos podrían tener las potenciales medidas que se fueran tomando."
-  },
-  {
-    "objectID": "index.html#objetivos",
-    "href": "index.html#objetivos",
-    "title": "Gestión de Área Quirúrgica",
-    "section": "",
-    "text": "Optimizar la Lista de Espera Quirúrgica (LEQ) del HUMS.\nObtener un mejor control y gestión más eficiente del Área Quirúrgica del HUMS.\n\n\n\n\n\nRecopilar, organizar, visualizar y comprender de forma rápida y eficaz toda la información relacionada con el flujo administrativo de la actividad quirúrgica del HUMS.\nAutomatizar la generación de informes que aporten valor en línea con los objetivos del Grupo de Trabajo.\nGenerar herramientas interactivas que ayuden a predecir la evolución natural de los indicadores de calidad que se establezcan y el impacto que sobre ellos podrían tener las potenciales medidas que se fueran tomando."
-  },
-  {
-    "objectID": "nosotros/nosotros.html",
-    "href": "nosotros/nosotros.html",
-    "title": "¿Quiénes Somos?",
-    "section": "",
-    "text": "Dra María Blanca Villarroya Izquierdo (Subdirectora de Servicios Quirúrgicos)\nDª Patricia Lite (Subdirectora de Gestión Económica).\nDª Paloma Martínez (Subdirectora de Gestión y Sistemas Información)\nDª Dolores Zapatero González (Coordinadora de Admisión)\nDr Antonio Martínez Germán (Coordinador del Bloque Quirúrgico)\nDª Pilar García Gil (Jefe de Servicio de Informática)\nDª Cristina Peña Olle (Jefa de Servicio de Control de Gestión)\nDr Javier Martínez Andreu (Jefe Servicio de Anestesiología y Reanimación)\nDª Marisol Gracia Orer (Jefa de Sección del Comité de Programación Quirúrgica)\nDª Silvia Elisa Agon Sarmiento (Jefa de Grupo G.S)\nDª Blanca Gerona Iñiguez (Servicio de Informática)\nDr Raúl Embún Flor (FEA Servicio de Cirugía Torácica)"
-  },
-  {
-    "objectID": "03_quirofanos/quirofanos.html",
-    "href": "03_quirofanos/quirofanos.html",
-    "title": "Quirófanos",
-    "section": "",
-    "text": "Quirófanos"
   },
   {
     "objectID": "03_quirofanos/cto_qfno.html",
@@ -495,5 +446,19 @@
     "title": "Cuadro de Mandos",
     "section": "\n2 Angiología y Cirugía Vascular",
     "text": "2 Angiología y Cirugía Vascular\n\n2.1 Urgencias\n\n2.2 Hospitalizacion\n\n2.3 Consultas Externas"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Gestión de Área Quirúrgica",
+    "section": "",
+    "text": "Optimizar la Lista de Espera Quirúrgica (LEQ) del HUMS.\nObtener un mejor control y gestión más eficiente del Área Quirúrgica del HUMS.\n\n\n\n\n\nRecopilar, organizar, visualizar y comprender de forma rápida y eficaz toda la información relacionada con el flujo administrativo de la actividad quirúrgica del HUMS.\nAutomatizar la generación de informes que aporten valor en línea con los objetivos del Grupo de Trabajo.\nGenerar herramientas interactivas que ayuden a predecir la evolución natural de los indicadores de calidad que se establezcan y el impacto que sobre ellos podrían tener las potenciales medidas que se fueran tomando."
+  },
+  {
+    "objectID": "index.html#objetivos",
+    "href": "index.html#objetivos",
+    "title": "Gestión de Área Quirúrgica",
+    "section": "",
+    "text": "Optimizar la Lista de Espera Quirúrgica (LEQ) del HUMS.\nObtener un mejor control y gestión más eficiente del Área Quirúrgica del HUMS.\n\n\n\n\n\nRecopilar, organizar, visualizar y comprender de forma rápida y eficaz toda la información relacionada con el flujo administrativo de la actividad quirúrgica del HUMS.\nAutomatizar la generación de informes que aporten valor en línea con los objetivos del Grupo de Trabajo.\nGenerar herramientas interactivas que ayuden a predecir la evolución natural de los indicadores de calidad que se establezcan y el impacto que sobre ellos podrían tener las potenciales medidas que se fueran tomando."
   }
 ]

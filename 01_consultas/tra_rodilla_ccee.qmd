@@ -44,7 +44,8 @@ data %>% group_by(Mes, Anio) %>% count() %>%
 ```{r}
 
 
-data %>% filter(Prestación == "PRIMERAS VISITAS") %>%
+data %>% 
+  filter(grepl("PRIME", Prestación)) %>%
   group_by(Mes, Anio) %>% count() %>%
   mutate(Mes_Anio = factor(paste0(Anio,"/", Mes))) %>%
   ggplot(aes(x=factor(Mes), y=n, group = factor(Anio))) +
@@ -67,18 +68,22 @@ data %>% filter(Prestación == "PRIMERAS VISITAS") %>%
 ```{r}
 
 data %>% group_by(Mes, Anio, Prestación) %>% count() %>% 
-  group_by(Mes, Anio) %>% 
-  mutate(Percent = round(100*n/sum(n), 0)) %>%
-  filter(Prestación %in% c("PRIMERAS VISITAS", "REVISIONES")) %>%
-  ggplot(aes(x=factor(Mes), y=n, group = factor(Anio))) +
-  geom_col(aes(fill=factor(Prestación)))+
-  geom_label(aes(label = if_else(Prestación == "PRIMERAS VISITAS",Percent, NA)), size = 2)+
+  mutate(Prestación2 = if_else(grepl("PRIME", Prestación), "PRIMERAS VISITAS", "REVISIÓN")) %>%
+  group_by(Mes, Anio, Prestación2) %>%
+  mutate(suma = sum(n)) %>%
+  distinct(Mes, Anio, Prestación2, suma) %>%
+  group_by(Mes, Anio) %>%
+  mutate(Percent = round(100*suma/sum(suma), 0)) %>%
+  ggplot(aes(x=factor(Mes), y=suma, group = factor(Anio))) +
+  geom_col(aes(fill=factor(Prestación2)))+
+  geom_label(aes(label = if_else(Prestación2 == "PRIMERAS VISITAS",Percent, NA)), size = 2)+
   theme(
     axis.text.x = element_text(angle=90, size=7),
     legend.position = "none"
     )+
   labs(x="\nMes", y="Primeras vs Segundas Visitas\n", caption = "Las etiquetas indican el porcentaje de primeras visitas para cada mes")+
   facet_wrap(~Anio, nrow = 2)
+
 
 ```
 
@@ -90,7 +95,7 @@ assign(
   x = paste0(params$codigo, "_pv"),
 
   data %>%
-  filter(Prestación == "PRIMERAS VISITAS") %>%
+  filter(grepl("PRIME", Prestación)) %>%
   group_by(Anio, Mes) %>% count(name = "primeras_visitas")
 )
 

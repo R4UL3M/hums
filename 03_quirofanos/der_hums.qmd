@@ -1,0 +1,271 @@
+---
+title: "Dermatología"
+params:
+  servicio: "DERMATOLOGIA QUIRURGICA"
+---
+
+
+
+```{r}
+
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(openxlsx)
+library(DT)
+library(gt)
+library(patchwork)
+
+```
+
+
+
+
+## Importación y Depuración de Datos
+
+
+```{r}
+
+data <- read_csv("ALL_qfnos.csv") %>% filter(servicio %in% params$servicio)
+
+data %>% head(5) %>% DT::datatable(options = list(
+  initComplete = JS(
+    "function(settings, json) {",
+    "$('table').css({'font-size': '12px'});",
+    "}"
+  )
+))
+
+```
+
+
+- `fecha`: modificación del tipo de dato para manejarlo como una fecha. 
+- `h_ini` (hora de inicio de la cirugía concatenación `fecha` y `h_ini`
+- `h_fin` (hora de finalización de la cirugía): concatenación `fecha` y `h_fin`
+- `h_15`: creramos esta variable que representa las 15:00 horas del día que indica la variable `fecha` 
+- `tiempo_quirurgico` (minutos): variable de nueva creación resultado de `h_fin` - `h_ini`
+- `fin_posterior_15`(TRUE vs FALSE): variable de nueva creación. TRUE si la cirugía termina después de las 15:00 horas.
+- `prolong`: variable `prolongación` tal y como se registra es recodificada como TRUE/FALSE.
+- `prolong2`: nueva variable que registra las prolongaciones de acuerdo con información ofrecida por SSQQ (variable ya importada desde archivo .xls que es transformada a formato lógico TRUE/FALSE)
+
+
+```{r}
+
+
+data$h_ini <- as.POSIXct(paste(data$fecha, data$h_ini), format = "%Y-%m-%d %H:%M", tz = "UTC")
+
+data$h_fin <- as.POSIXct(paste(data$fecha, data$h_fin), format = "%Y-%m-%d %H:%M", tz = "UTC") 
+
+data$h_15 <- as.POSIXct(paste(data$fecha, "15:00"), format = "%Y-%m-%d %H:%M", tz = "UTC")
+
+data <- data %>% mutate(tiempo_quirurgico = difftime(h_fin, h_ini, units = "mins"),
+                      fin_posterior_15 = format(data$h_fin, "%H:%M:%S") > "15:00:00")
+
+data <- data %>% mutate(prolong = if_else(prolong == "N", FALSE, TRUE))
+
+# data <- data %>% mutate(prolong2 = if_else(prolong2 == "FALSE", FALSE, TRUE))
+
+
+data %>% 
+  select(fecha, h_ini, h_fin, h_15, tiempo_quirurgico, fin_posterior_15) %>% 
+  arrange(fecha) %>%
+  head(5) %>%
+  DT::datatable(options = list(
+  initComplete = JS(
+    "function(settings, json) {",
+    "$('table').css({'font-size': '14px'});",
+    "}"
+  )
+)) 
+
+```
+
+- Conversion de la variable `anul` a variable tipo lógico (TRUE vs FALSE)
+
+```{r}
+
+data <- data %>% mutate(anul = if_else(is.na(anul), FALSE, TRUE))
+
+```
+
+
+
+- Creación de la variable `cirujano` representando el cirujano principal del procedimiento. Dicho profesional se obtiene extrayendo el primer profesional de la lista de cirujanos de la tabla original. 
+
+```{r}
+
+data$cirujano_pral <- sub("\\s*\\(Pral\\).*", "", data$cirujanos)
+
+data %>% select(cirujanos, cirujano_pral) %>% head(5) %>% DT::datatable()
+
+```
+
+
+
+## Procedimientos Mensuales 
+
+```{r}
+
+data %>% filter(anul == FALSE) %>% count(Mes = month(fecha)) %>% 
+  ggplot(aes(x= factor(Mes), y = n)) +
+  geom_col(fill="steelblue", width = 0.7)+
+  geom_label(aes(label=n))+
+  theme_replace() +
+  labs(x = "\nMes", y="Procedimientos\n")
+
+```
+
+## Variable "Prolongación"
+
+```{r}
+
+table(data$prolong)
+
+```
+
+
+## Jornadas de Mañana (JM)
+
+Como no se está utilizando la variable "Prolongación" para clasificar a aquellas jornadas que tienen carácter extraordinario, se ha optado por considerar que los procedimientos que se inician después de las 15:00 pertenecen a dicho tipo de jornada.
+
+```{r}
+
+data <- data %>% mutate(extra = (as_hms(h_ini) > as_hms("15:00:00")) & tipo_int != "URGENTE") 
+
+```
+
+
+
+###  Tiempo Quirúrgico Útil Jornadas Mañana
+
+- Aquellas jornadas quirúrgicas en las que existe un procedimiento cuya duración registrada es de 0 minutos son excluidas para el computo del tiempo quirúrgico útil. 
+
+```{r}
+
+fechas_tiempo0 <- data %>% 
+  filter(tiempo_quirurgico == 0) %>% 
+  pull(fecha)
+
+data %>% 
+  filter(anul==FALSE & tipo_int != "URGENTE" & prolong == FALSE & extra == FALSE) %>% 
+  filter(!fecha %in% fechas_tiempo0) %>% 
+  group_by(fecha) %>% 
+  summarise(tq = sum(tiempo_quirurgico)) %>% 
+  arrange(fecha) %>%
+  ggplot(aes(x=fecha, y=tq)) +
+  geom_point()+
+  geom_smooth()+
+  scale_y_continuous(breaks = seq(0,1000,100))+
+  labs(y="Minutos\n")
+
+
+```
+
+### Tiempo de Finalización (Jornada Mañana)
+
+
+```{r}
+
+data %>% filter(anul==FALSE & tipo_int != "URGENTE" & prolong == FALSE & extra==FALSE) %>% 
+  group_by(fecha, h_15) %>% summarise(h_fin_max = max(h_fin)) %>%
+  mutate(dif = as.numeric(difftime(h_fin_max, h_15, units = "mins"))) %>%
+  ggplot(aes(x=fecha, y=dif))+
+  geom_smooth()+
+  geom_hline(yintercept = 0, colour = "red")+
+  geom_point()+
+  labs(y="Minutos\n", x="\nFecha", caption = "Valores positivos representan tiempo transcurrido después de las 15:00h.")
+
+```
+
+
+
+## Cancelaciones / Mes
+
+```{r}
+
+
+data %>% filter(anul == TRUE) %>% count(Mes = month(fecha)) %>% 
+  ggplot(aes(x= factor(Mes), y = n)) +
+  geom_col(fill="steelblue", width = 0.7)+
+  geom_label(aes(label=n))+
+  theme_replace() +
+  labs(x = "\nMes", y="Cancelaciones\n")
+
+
+```
+
+## Hora de Cancelación
+
+```{r}
+
+data %>% filter(anul == TRUE) %>% 
+  mutate(h_ini_hm = format(h_ini, format = "%H:%M")) %>%
+  ggplot(aes(x=fecha, y= h_ini_hm))+
+  geom_point(color = "steelblue", size=2)+
+  theme_replace()+
+  labs(y = "Cancelación Hora:Minutos\n", x="\nFecha")
+
+
+```
+
+
+## Jornadas Extraordinarias
+
+
+###  Mensuales
+
+```{r}
+
+data %>% 
+  filter((prolong == TRUE | extra == TRUE) & anul == FALSE) %>% 
+  distinct(fecha) %>% 
+  mutate(mes = month(fecha)) %>%
+  count(mes) %>%
+  ggplot(aes(x = factor(mes), y=n)) +
+  geom_col(fill="orange", width = 0.5) +
+  geom_label(aes(label = n))+
+  theme_replace()+
+  labs(x = "\nMes", y="Jornadas Extraordinarias\n")
+
+
+```
+
+
+
+### Finalización de Jornadas Extraordinarias
+
+```{r}
+
+
+data %>% filter((prolong == "TRUE" | extra == TRUE) & anul == FALSE) %>% 
+  group_by(fecha) %>% 
+  summarise(max = max(h_fin)) %>%
+  mutate(h_15 = as.POSIXct(paste(fecha, "15:00"), format = "%Y-%m-%d %H:%M", tz = "UTC"),
+         dif = as.numeric(difftime(max, h_15, units = "mins")))%>%
+  filter(dif >0) %>%
+  ggplot(aes(x=fecha, y=dif)) +
+  geom_col(fill = "steelblue") +
+  geom_hline(yintercept = 0, color="red", linewidth = 1)+
+  geom_hline(yintercept = 120, color="orange", linewidth = 0.7, linetype = 2)+
+  geom_hline(yintercept = 180, color="green", linewidth = 0.7, linetype = 2)+
+  theme_replace() +
+  labs(y = "Minutos\n", x="\nFecha", caption = "Rojo 15:00h\n Naranja 17:00h\n Verde 18:00h", subtitle = "Fuente:Hoja Quirúrgica")
+
+  
+```
+
+
+## Cirugía Urgente
+
+```{r}
+
+data %>% filter(tipo_int == "URGENTE")  %>% 
+  group_by(Mes = month(fecha), Año = year(fecha)) %>% summarise(n=n()) %>%
+  ggplot(aes(x = as.factor(Mes), y = n )) +
+  geom_col(fill = "steelblue") + 
+  theme_replace() +
+  labs(x = "\nMes", y = "Proced. Urgentes\n", caption = "Año 2024")
+
+
+```
+

@@ -1,0 +1,16 @@
+{
+  "hash": "79096ea2a8fcbb446077174b8d4e240a",
+  "result": {
+    "markdown": "---\ntitle: \"Cirugía Torácica\"\nparams:\n  codigo: \"CTO\"\n---\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n\n<br>\n\n## Total Consultas\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-3-1.png){width=672}\n:::\n:::\n\n\n<br>\n\n## Médicos\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-4-1.png){width=672}\n:::\n:::\n\n\n\n## Tipos de Prestación \n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-5-1.png){width=672}\n:::\n:::\n\n\n\n## Primeras Visitas\n\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-6-1.png){width=672}\n:::\n:::\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-7-1.png){width=672}\n:::\n:::\n\n::: {.cell}\n\n:::\n\n\n\n<br>\n\n## Primeras vs Segundas Visitas \n\n\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-9-1.png){width=672}\n:::\n:::\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-10-1.png){width=672}\n:::\n:::\n\n\n\n## Prioridad\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-11-1.png){width=672}\n:::\n:::\n\n\n\n## Estado \n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_ccee_files/figure-html/unnamed-chunk-12-1.png){width=672}\n:::\n:::\n",
+    "supporting": [
+      "cto_ccee_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

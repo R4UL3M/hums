@@ -1,0 +1,16 @@
+{
+  "hash": "cd2487290653286fd5aad207adc8e32a",
+  "result": {
+    "markdown": "---\ntitle: \"cto\"\nparams:\n  codigo: \"CTO\"\n  \n  \n---\n\n::: {.cell}\n\n:::\n\n\n\n\n## Datos: Primeras Visitas y  RDQ\n\n\n::: {.cell}\n\n:::\n\n\n\n## Primeras Visitas vs Total Entradas en RDQ\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_rdq_files/figure-html/unnamed-chunk-3-1.png){width=672}\n:::\n:::\n\n\n\n\n<br>\n\n## Total Entradas vs Salidas\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_rdq_files/figure-html/unnamed-chunk-4-1.png){width=672}\n:::\n:::\n\n\n<br>\n\n\n### Salidas según Tipo de Jornada\n\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_rdq_files/figure-html/unnamed-chunk-5-1.png){width=672}\n:::\n:::\n\n\n\n### Salidas según Tipo de Cirugía\n\n\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_rdq_files/figure-html/unnamed-chunk-6-1.png){width=672}\n:::\n:::\n\n\n\n<br>\n\n\n## Activos en Espera (Todos)\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_rdq_files/figure-html/unnamed-chunk-7-1.png){width=672}\n:::\n:::\n\n\n\n## Activos en Espera (Críticos)\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_rdq_files/figure-html/unnamed-chunk-8-1.png){width=672}\n:::\n:::\n\n\n\n\n<br>\n\n## Demora Media\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](cto_rdq_files/figure-html/unnamed-chunk-9-1.png){width=672}\n:::\n:::\n",
+    "supporting": [
+      "cto_rdq_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

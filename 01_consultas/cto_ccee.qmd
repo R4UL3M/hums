@@ -4,8 +4,11 @@ params:
   codigo: "CTO"
 ---
 
+
+
 ```{r}
 library(tidyverse)
+
 ```
 
 
@@ -36,13 +39,61 @@ data %>% group_by(Mes, Anio) %>% count() %>%
 
 <br>
 
+## Médicos
+
+```{r}
+
+data %>% 
+  group_by(Anio) %>%
+  count(Médico) %>%
+  mutate(percent = round(100*n/sum(n),0)) %>%
+  arrange(desc(n)) %>%
+  ggplot(aes(x = factor(Médico), y=percent)) +
+  geom_col(aes(fill = factor(Médico)))+
+  geom_label(aes(label = if_else(percent > 1,paste0(percent,"%"),"")),size=2)+
+  coord_flip()+
+  labs(x=NULL, y=NULL) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size=6)
+  )+
+  facet_wrap(~Anio)
+
+
+```
+
+
+## Tipos de Prestación 
+
+```{r}
+
+data %>% 
+  group_by(Anio) %>%
+  count(Prestación) %>%
+  mutate(percent = round(100*n/sum(n),0)) %>%
+  arrange(desc(n)) %>%
+  ggplot(aes(x = fct_reorder(factor(Prestación),percent), y=percent)) +
+  geom_col(aes(fill = factor(Prestación)))+
+  geom_label(aes(label = if_else(percent > 10,paste0(percent,"%"),"")),size=2)+
+  coord_flip()+
+  labs(x=NULL, y=NULL) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size=6)
+  )+
+  facet_wrap(~Anio)
+
+```
+
+
 ## Primeras Visitas
 
 
 ```{r}
 
 
-data %>% filter(Prestación == "PRIMERAS VISITAS") %>%
+data %>% 
+  filter(grepl("PRIME", Prestación)) %>%
   group_by(Mes, Anio) %>% count() %>%
   mutate(Mes_Anio = factor(paste0(Anio,"/", Mes))) %>%
   ggplot(aes(x=factor(Mes), y=n, group = factor(Anio))) +
@@ -58,16 +109,53 @@ data %>% filter(Prestación == "PRIMERAS VISITAS") %>%
 ```
 
 
+```{r}
+
+
+data %>% 
+  filter(grepl("PRIME", Prestación)) %>%
+  group_by(Médico, Mes, Anio) %>% count() %>%
+  mutate(tiempo = factor(paste0(Anio,"/", Mes, "/", 30))) %>%
+  ggplot(aes(x=as.Date(tiempo), y=n)) +
+  geom_line(aes(color = Médico))+
+  theme(
+    axis.text.x = element_text(angle=90, size=7),
+    legend.position = "none"
+    )+
+  labs(x="\nMes", y="Primeras Visitas\n")+
+  facet_wrap(~Médico, ncol = 3)
+
+```
+
+
+
+```{r}
+
+assign(
+
+  x = paste0(params$codigo, "_pv"),
+
+  data %>%
+  filter(grepl("PRIME", Prestación)) %>%
+  group_by(Anio, Mes) %>% count(name = "primeras_visitas")
+)
+
+
+```
+
+
 <br>
 
-## Primeras vs Segundas Visitas
+## Primeras vs Segundas Visitas 
+
+
 
 ```{r}
 
 data %>% group_by(Mes, Anio, Prestación) %>% count() %>% 
+  filter(Prestación %in% c("PRIMERAS VISITAS", "REVISIONES")) %>%
   group_by(Mes, Anio) %>% 
   mutate(Percent = round(100*n/sum(n), 0)) %>%
-  filter(Prestación %in% c("PRIMERAS VISITAS", "REVISIONES")) %>%
   ggplot(aes(x=factor(Mes), y=n, group = factor(Anio))) +
   geom_col(aes(fill=factor(Prestación)))+
   geom_label(aes(label = if_else(Prestación == "PRIMERAS VISITAS",Percent, NA)), size = 2)+
@@ -81,19 +169,75 @@ data %>% group_by(Mes, Anio, Prestación) %>% count() %>%
 ```
 
 
+
+
 ```{r}
 
-assign(
+data %>% group_by(Anio, Médico, Prestación) %>% count() %>% 
+  filter(Prestación %in% c("PRIMERAS VISITAS", "REVISIONES")) %>%
+  group_by(Anio, Médico) %>% 
+  mutate(Percent = round(100*n/sum(n), 0)) %>%
+  ggplot(aes(x=factor(Médico), y=n, group = factor(Anio))) +
+  geom_col(aes(fill=factor(Prestación)))+
+  geom_label(aes(label = if_else(Prestación == "PRIMERAS VISITAS",Percent, NA)), size = 2)+
+  theme(
+    axis.text.x = element_text(angle=90, size=7),
+     axis.text.y = element_text(size=6),
+    legend.position = "none"
+    )+
+  coord_flip()+
+  labs(x=NULL, y="\nPrimeras vs Segundas Visitas\n", caption = "Las etiquetas indican el porcentaje de primeras visitas para cada mes")+
+  facet_wrap(~Anio, nrow = 2)
 
-  x = paste0(params$codigo, "_pv"),
 
-  data %>%
-  filter(Prestación == "PRIMERAS VISITAS") %>%
-  group_by(Anio, Mes) %>% count(name = "primeras_visitas")
-)
-
-saveRDS(object = get(paste0(params$codigo, "_pv")), file = paste0(params$codigo, "_pv", ".RDS"))
 
 ```
+
+
+## Prioridad
+
+```{r}
+
+data %>% 
+  group_by(Anio) %>%
+  count(Tipo) %>%
+  mutate(percent = round(100*n/sum(n),0)) %>%
+  arrange(desc(n)) %>%
+  ggplot(aes(x = fct_reorder(factor(Tipo),percent), y=percent)) +
+  geom_col(aes(fill = factor(Tipo)))+
+  geom_label(aes(label = paste(percent,"%")),size=2)+
+  coord_flip()+
+  labs(x=NULL, y=NULL) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size=6)
+  )+
+  facet_wrap(~Anio)
+
+```
+
+
+## Estado 
+
+```{r}
+
+data %>% 
+  group_by(Anio) %>%
+  count(Estado) %>%
+  mutate(percent = round(100*n/sum(n),0)) %>%
+  arrange(desc(n)) %>%
+  ggplot(aes(x = fct_reorder(factor(Estado),percent), y=percent)) +
+  geom_col(aes(fill = factor(Estado)))+
+  geom_label(aes(label = paste(percent,"%")),size=2)+
+  coord_flip()+
+  labs(x=NULL, y=NULL) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size=6)
+  )+
+  facet_wrap(~Anio)
+```
+
+
 
 

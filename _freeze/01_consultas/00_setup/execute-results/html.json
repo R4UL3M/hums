@@ -1,8 +1,10 @@
 {
-  "hash": "55a180dba23524d5dd9adabac3fce3b8",
+  "hash": "5dff0f53f469077c523802a35660ee9d",
   "result": {
-    "markdown": "---\ntitle: \"Consultas Externas\"\nsubtitle: \"Lectura y Unión de Registros\"\n---\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n",
-    "supporting": [],
+    "markdown": "---\ntitle: \"CE Realizadas\"\nsubtitle: \"Lectura y Unión de Registros\"\nexecute: \n  echo: false\n  include: false\n  \n---\n\n\n\n\n\n\n",
+    "supporting": [
+      "00_setup_files"
+    ],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],

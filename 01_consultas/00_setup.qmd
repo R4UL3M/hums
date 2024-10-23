@@ -1,6 +1,10 @@
 ---
-title: "Consultas Externas"
+title: "Actividad Consultas"
 subtitle: "Lectura y Unión de Registros"
+execute: 
+  echo: false
+  include: false
+  
 ---
 
 
@@ -30,8 +34,7 @@ read_consultas <- function(path = NULL, codigo = NULL){
            `Fecha nac.` = as.POSIXct(`Fecha nac.`, format = "%d/%m/%Y"), 
            Edad = as.numeric(round(difftime(Fecha, `Fecha nac.`, units = "days")/365, 0))
            ) %>%
-    select(codigo, Fecha, Mes, Anio, Hora, everything()) %>%
-    select(-c(CIA, NHC, Paciente, `Cód.age.`, Agenda, `Cód.Serv.`))
+    select(codigo, Fecha, Mes, Anio, Hora, everything()) 
   
   assign(x = paste0(codigo, "_ccee"), df, envir = .GlobalEnv)
 }
@@ -44,7 +47,10 @@ path =  paste0("data/",c(
   "tra_rodilla",      # 3 
   "tra_columna",      # 4
   "tra_fracturas",    # 5
-  "der_hums"          # 6 
+  "der_hums",         # 6
+  "der_ryc",          # 7
+  "der_sj",
+  "der_def"
   ),     # 4
   ".xls"),
 
@@ -54,7 +60,10 @@ codigo = c(
   "TRA_RODILLA",      # 3
   "TRA_COLUMNA",      # 4
   "TRA_FRACTURAS",    # 5 
-  "DER_HUMS"          # 6
+  "DER_HUMS",         # 6
+  "DER_RYC",          # 7
+  "DER_SJ",
+  "DER_DEF"
   )      
 )
 
@@ -67,16 +76,17 @@ pwalk(map_consultas, read_consultas)
 
 ```{r}
 
+
 objetos <- ls()
 
-objetos <- objetos[grepl("_ccee$", objetos)]
+# Selecccionamos los objetos cuyo nombre termina en "_cceee"
+objetos <- objetos[grepl("_ccee$", objetos)]    
 
-
-# Crear una lista de los objetos seleccionados
+# Creamos una lista de los objetos seleccionados
 lista_objetos <- lapply(objetos, get)
 
 # Combinar los objetos en un solo data frame
-ALL_consultas <- do.call(rbind, lista_objetos)
+ALL_consultas <- do.call(rbind,lista_objetos)
 
 write_excel_csv(x = ALL_consultas, file = "ALL_consultas.csv")
 

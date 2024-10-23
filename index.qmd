@@ -1,25 +1,39 @@
 ---
-title: "Gestión de Área Quirúrgica"
-subtitle: "Hospital Universitario Miguel Servet"
+title: "Gestión del Área Quirúrgica"
 ---
 
 ## Objetivos
 
-### Del Grupo de Trabajo
+### Grupo de Trabajo
 
-- Optimizar la Lista de Espera Quirúrgica (LEQ) del HUMS. 
+- Optimizar la Lista de Espera Quirúrgica (LEQ). 
 
-- Obtener un mejor control y gestión más eficiente del Área Quirúrgica del HUMS.
+- Obtener un mejor control y gestión más eficiente del Área Quirúrgica.
 
-### De este Sitio Web
+### Nuestro Sitio
 
 - Recopilar, organizar, visualizar y comprender de forma rápida y eficaz toda la información relacionada con el 
-flujo administrativo de la actividad quirúrgica del HUMS.
+flujo médico-administrativo de la actividad quirúrgica.
 
 - Automatizar la generación de informes que aporten valor en línea con los objetivos del Grupo de Trabajo. 
 
 - Generar herramientas interactivas que ayuden a predecir la evolución natural de los indicadores de calidad que se establezcan y el impacto que sobre ellos podrían tener las potenciales medidas que se fueran tomando.  
 
+
+## Profesionales
+
+- Dra María Blanca Villarroya Izquierdo (Subdirectora de Servicios Quirúrgicos)
+- Dª Patricia Lite (Subdirectora de Gestión Económica).
+- Dª Paloma Martínez (Subdirectora de Gestión y Sistemas Información)
+- Dª Dolores Zapatero González (Coordinadora de Admisión)
+- Dr Antonio Martínez Germán (Coordinador del Bloque Quirúrgico)
+- Dª Pilar García Gil (Jefe de Servicio de Informática) 
+- Dª Cristina Peña Olle (Jefa de Servicio de Control de Gestión)
+- Dr Javier Martínez Andreu (Jefe Servicio de Anestesiología y Reanimación)
+- Dª Marisol Gracia Orer (Jefa de Sección del Comité de Programación Quirúrgica)
+- Dª Silvia Elisa Agon Sarmiento (Jefa de Grupo G.S) 
+- Dª Blanca Gerona Iñiguez (Servicio de Informática)
+- Dr Raúl Embún Flor (FEA Servicio de Cirugía Torácica)
 
 
 

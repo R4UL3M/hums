@@ -14,18 +14,20 @@ website:
   page-navigation: true
   
   navbar:
+    title: false
     background: primary
     logo: /imagenes/logo_hums.jpg
+    pinned: true
     search: true
     left:
       - text: "Inicio"
         href: index.qmd
-        
-      - text: "Nosotros"
-        href: nosotros/nosotros.qmd
-        
-      - text: "Consultas Ext."
+
+      - text: "CE Realizadas"
         href: 01_consultas/00_setup.qmd
+
+      - text: "CE Pendientes"
+  
         
       - text: "RDQ"
         href: 02_rdq/00_rdq.qmd
@@ -49,14 +51,17 @@ website:
 
 
   sidebar:
-      - title: "Inicio"
-        href: index.qmd
-        
-      - title: "Nosotros"
-        href: nosotros.qmd
-        
-      - title: "Consultas Ext."
+
+      # - title: "Inicio"
+      #   href: index.qmd
+      #   
+      # - title: "Nosotros"
+      #   href: nosotros.qmd
+      
+
+      - title: "CE Realizadas"
         style: "docked"
+        collapse-level: 1
         background: light
         contents:
           - 01_consultas/00_setup.qmd
@@ -67,7 +72,10 @@ website:
               - text: "HUMS"
                 href: 01_consultas/der_hums.qmd
               - text: "CME Ramón y Cajal"
+                href: 01_consultas/der_ryc.qmd
               - text: "CME San José"
+                href: 01_consultas/der_sj.qmd
+                
           - section: "Traumatología" 
             contents:
               - text: "Global"
@@ -94,7 +102,7 @@ website:
           - text: "Traumatología"
             href: 02_rdq/tra_rdq.qmd
 
-      - text: "Quirófanos"
+      - title: "Quirófanos"
         style: "docked"
         background: light
         contents:

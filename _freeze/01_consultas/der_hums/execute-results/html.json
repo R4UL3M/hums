@@ -1,0 +1,16 @@
+{
+  "hash": "c95627a2678ec72c863b0015ed99c5c9",
+  "result": {
+    "markdown": "---\ntitle: \"Dermatología HUMS\"\nparams:\n  codigo: \"DER_HUMS\"\n---\n\n::: {.cell}\n\n:::\n\n::: {.cell}\n\n:::\n\n\n<br>\n\n## Total Consultas\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](der_hums_files/figure-html/unnamed-chunk-3-1.png){width=672}\n:::\n:::\n\n\n<br>\n\n## Agendas\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](der_hums_files/figure-html/unnamed-chunk-4-1.png){width=672}\n:::\n:::\n\n\n\n## Tipos de Prestación \n\n\n::: {.cell}\n::: {.cell-output-display}\n![](der_hums_files/figure-html/unnamed-chunk-5-1.png){width=672}\n:::\n:::\n\n\n\n## Primeras Visitas\n\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](der_hums_files/figure-html/unnamed-chunk-6-1.png){width=672}\n:::\n:::\n\n::: {.cell}\n\n:::\n\n\n\n<br>\n\n## Primeras vs Segundas Visitas\n\nEn este gráfico solo se recogen aquellas prestaciones que literalmente coinciden con \"Primeras Visitas\" y \"Reviviones\". Por lo tanto, se excluyen \"Revisiones Atención Telefónica\".\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](der_hums_files/figure-html/unnamed-chunk-8-1.png){width=672}\n:::\n:::\n\n\n\n\n## Prioridad\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](der_hums_files/figure-html/unnamed-chunk-9-1.png){width=672}\n:::\n:::\n\n\n\n## Estado \n\n\n::: {.cell}\n::: {.cell-output-display}\n![](der_hums_files/figure-html/unnamed-chunk-10-1.png){width=672}\n:::\n:::\n",
+    "supporting": [
+      "der_hums_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
